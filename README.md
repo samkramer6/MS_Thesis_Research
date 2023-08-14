@@ -1,2 +1,2 @@
 # Chirp_Detection_Algorithm
-Repository for chirp detection algorithm development
+This is a repository for chirp detection algorithm development.
