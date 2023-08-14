@@ -11,7 +11,7 @@ function find_chirps(data_path,mic_num,bat_type)
 %   July 28th, 2023
 %
 
-%%%%%%%%%%%%%%%%%%%%%%%%%% Selecting Data Type %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Setup Section %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % --Workspace messages
     clc; warning off;
@@ -35,14 +35,14 @@ function find_chirps(data_path,mic_num,bat_type)
                 disp("Selected Hipposideros")
 
             % --create linear chirp pattern
-                FM_chirp = create_chirp("Linear",1,1,120000,100000,500000,"false");
+                FM_chirp = create_chirp("Linear",1,0.005,120000,100000,500000,"false");
                 weight = 1.3;
 
         elseif bat_type(1) == 'R'
             % --Load in rhino calls
                 rhino_call = load("Rhino_example_chirp.mat");
                 CFFM_chirp = rhino_call.model_chirp;
-                FM_chirp = create_chirp("Linear",1,1,120000,100000,500000,"false");
+                FM_chirp = create_chirp("Linear",1,0.005,120000,100000,500000,"false");
                 weight = 0;
         end
     catch
@@ -51,7 +51,7 @@ function find_chirps(data_path,mic_num,bat_type)
             disp("Checking only on a linear chirp pattern")
 
         % --create linear chirp pattern
-            FM_chirp = create_chirp("Linear",1,1,120000,100000,500000,"false");
+            FM_chirp = create_chirp("Linear",1,0.005,120000,100000,500000,"false");
     end
 
 % --Feedback message
@@ -112,7 +112,6 @@ function find_chirps(data_path,mic_num,bat_type)
 
             % --Save spectrogram of data
                 saveas(spect,title)
-                
         end
 
     % --Close out of the directory
@@ -120,4 +119,3 @@ function find_chirps(data_path,mic_num,bat_type)
         fclose("all");
         close all;          % Close all the open figures
 end
-

@@ -54,7 +54,5 @@ function signal = create_chirp(chirp_type, number, length, freq_start, freq_end,
 
             disp("Default Spectrogram Settings Used")
         end
-
     end
-
 end
