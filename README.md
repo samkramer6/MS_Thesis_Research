@@ -1,4 +1,4 @@
-# Chirp_Detection_Algorithm
+# Chirp Detection Algorithm
 This is a repository for chirp detection algorithm development.
 
 ## Matlab Libraries
