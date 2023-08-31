@@ -20,18 +20,60 @@
 # --module inclusion
     using .library
 
-######################### Setup Section ########################
-
-# --Load in dataset
+############################################ Parameters ###########################################
     file_path = "C:\\Users\\Sam Kramer\\Desktop\\Engineering\\IRES 2023\\IRES 2023 -- Acoustics Array\\Test Data\\Testing 20JUL23\\Bat1_Trial2_20JUL2023.mat";
-    
-    data = matread(file_path);
-    data = data["final_output_data"];
+    mic_num = 1;
+    bat_type = "Hipposiderus";
 
-    mic_data = data[2:end - 1, 2:end];
-    time = vec(data[2:end - 1, 1:end]);
-    fs = round(1/(time[10] - time[9]));
+########################################## Setup Section ##########################################
 
-    print("Loaded Data Successfully")
+# --Load in dataset and select mic dataset
+    (mic_data, time, fs) = load_data(file_path);
+    mic_data = vec(mic_data[:, mic_num]);
+
+# --Select Bat Call Comparison
+    bat_type = String(bat_type);
+    bat_type = uppercase(bat_type);
+
+    try
+        if bat_type[1] == 'H'
+            # --Load in Hipposiderus call
+
+
+        elseif bat_type[1] == 'R'
+            # --Load in Rhinolophus call
+
+
+        else
+            # --Load in only FM_chirp
+
+
+        end
+    catch
+        # --Load in only FM_chirp
+
+
+
+    end
+
+# --Feedback message
+
+
+# --Filter data out
+
+
+####################################### Time Domain Section #######################################
+
+
+
+####################################### Freq Domain Section #######################################
+
+
+
+####################################### Create Spectrograms #######################################
+
+# --Compare datasets
+
 
 # --
+

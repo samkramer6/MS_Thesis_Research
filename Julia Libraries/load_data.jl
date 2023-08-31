@@ -13,7 +13,7 @@ function load_data(file_path)
 
     # --Reformat Data
         mic_data = data[2:end - 1, 2:end];
-        time = vec(data[2:end - 1, 1:end]);
+        time = vec(data[2:end - 1, 1]);
         fs = round(1/(time[10] - time[9]));
 
     # --Outline
