@@ -5,10 +5,12 @@
 
 module library
 
-    # --Function Definitions
+    # --Include Function Definition Files
         include("load_data.jl")     # load_data() function include statement
+        include("spectrogram_function.jl")
 
     # --Export List
         export load_data
+        export spectrogram_function
 
 end
