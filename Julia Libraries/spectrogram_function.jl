@@ -25,7 +25,7 @@ function spectrogram_function(data_vector, fs, time_start, time_end)
     try
         # --Find ind = 1
             ind1 = time_start*fs + 1;
-             ind2 = time_end*fs;
+            ind2 = time_end*fs;
 
         # --Pull in dataset
             data = data_vector[ind1:ind2];
