@@ -2,26 +2,19 @@
     This is a function that will create a chirp that can be used for the time domain finder
     algorithm. This uses the chirp function from the DSP package.
 
-    Inputs:     chirp_type::string  ==  linear or log scaling
-                freq_start::int     ==  Start frequency of chirp (Hz)
+    Inputs:     freq_start::int     ==  Start frequency of chirp (Hz)
                 freq_end::int       ==  End frequeny of chirp (Hz)
                 fs::int             ==  Sample frequency from test (Hz)
-                show_chirp::bool    ==  option to show chirp
-                show_spect::bool    ==  option to show spectrogram
-                number::int         ==  number of chirps per second
+                show_response::bool ==  option to show chirp
 
     Sam Kramer
     September 5th, 2023
 =#
 
-# --Include statements
-
-
 # --Using Statements
     using SignalAnalysis
     using DSP
     using Plots 
-
 
 # --Function definition
 function create_chirp(freq_start, freq_end, duration, fs, show_response)
@@ -45,6 +38,6 @@ function create_chirp(freq_start, freq_end, duration, fs, show_response)
         display(y)
     catch
     end
-    
+
     return chirp_signal 
 end
