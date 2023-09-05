@@ -19,8 +19,8 @@
 
 # --Using Statements
     using SignalAnalysis
-    using GLMakie
-    using DSP 
+    using DSP
+    using Plots 
 
 
 # --Function definition
@@ -32,17 +32,19 @@ function create_chirp(freq_start, freq_end, duration, fs, show_response)
     chirp_signal = real(chirp_signal);                          # Convert into a real array.
 
 # --Show plots of signals, will default to false
-
         if show_response == "true"
-            t = vec(0:1/fs:duration - (1/fs));
 
-            scene1 = lines(t, chirp_signal, xlabel = "Time (s)", ylabel = "Amplitude", title = "Generated Chirp Signal");
-
-            spec = spectrogram(chirp_signal, 300, 290, fs = fs);
-            y = Plots.heatmap(spec.time, spec.freq, spec.power, xlabel = "Time (s)", ylabel = "Frequency", title = "Spectrogram", color = :jet)
-            display(y)
+            # --Create spectrogram of response
+                spec = spectrogram(chirp_signal, 300, 290, fs = fs);
+                y = Plots.heatmap(spec.time, spec.freq, spec.power, xlabel = "Time (s)", ylabel = "Frequency", title = "Spectrogram", color = :jet)
 
         end
 
-    return chirp_signal
+# --Display plot if it exists
+    try
+        display(y)
+    catch
+    end
+    
+    return chirp_signal 
 end
