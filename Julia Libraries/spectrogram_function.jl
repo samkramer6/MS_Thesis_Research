@@ -7,58 +7,45 @@
 
 =#
 
-#=
-    Can use tfd() function to create either a spectrogram or a WV distribution
-    Check to see which is better, this could be a significant part of the thesis, the cross-WVD selection
-
-=#
-
-# Include statements
-    using GLMakie
-    using SignalAnalysis    # Signal Processing Package
+# Using statements
+    using Plots
+    using DSP    # Signal Processing Package for spectrogram()
     using Statistics
 
-
-function spectrogram_function(data_vector, fs, time_start, time_end)
+function spectrogram_function(data, fs, time_start, time_end)
 
     # --Maniupulate the dataset
-    try
-        # --Find ind = 1
-            ind1 = time_start*fs + 1;
-            ind2 = time_end*fs;
-
-        # --Pull in dataset
-            data = data_vector[ind1:ind2];
-            data = data - mean(data);
-            i = "true";
-
-    catch 
-        i = "false";
-        error("Error: Displaying Whole Time Set");
-        data = data - mean(data);
-    end
-
-    # --Creating the spectrogram function
-    try
-        # --Take TFD Spectrogram
-            y = tfd(data, Spectrogram(nfft = 300, noverlap = 290, window = hamming));
-            
-
-    catch
-        # --Display error message
-        error("Error: Could not make Spectrogram")
-
-    end
-
-    # --Reformat time 
         try
-            if i == "true"
 
-            end
-                
-        catch
+            # --Find ind = 1
+                ind1 = time_start*fs + 1;
+                ind2 = time_end*fs;
+
+            # # --Pull in dataset
+                data = data[(ind1):(ind2)];
+                data = data .- mean(data);
+                i = "true";
+
+        catch 
+
+            i = "false";
+            println("Error: Displaying Whole Time Set")
+            data = data .- mean(data);
 
         end
 
-end
+    # --Creating the spectrogram
+        spec = spectrogram(data, 300, 290, fs = fs);
+            
+    # --Reformat time
+        time = spec.time;
+        N = length(time);
+        time = LinRange(time_start, time_end, N);       # linspace equivalent
 
+    # # --Create Heatmap
+        y = Plots.heatmap(time, spec.freq, spec.power, xlabel = "Time (s)", ylabel = "Frequency (Hz)", title = "Spectrogram", colorbar_title = "Power (Linear)", color = :jet);
+        # colorbar(y, label = "Power (Linear)")
+        display(y)
+
+    return
+end
