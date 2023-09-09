@@ -15,6 +15,7 @@
     using SignalAnalysis
     using DSP
     using Plots 
+    using Main.library
 
 # --Function definition
 function create_chirp(freq_start, freq_end, duration, fs, show_response)
@@ -28,14 +29,13 @@ function create_chirp(freq_start, freq_end, duration, fs, show_response)
         if show_response == "true"
 
             # --Create spectrogram of response
-                spec = spectrogram(chirp_signal, 300, 290, fs = fs);
-                y = Plots.heatmap(spec.time, spec.freq, spec.power, xlabel = "Time (s)", ylabel = "Frequency", title = "Spectrogram", color = :jet)
+                spectrogram_function(chirp_signal, fs, 0, duration);
 
         end
 
 # --Display plot if it exists
     try
-        display(y)
+        #display(y)
     catch
     end
 
