@@ -28,8 +28,7 @@ function five_peak_finder()
 
             # --Take the top 5
 
-
-                # --Selecting the top values
+            # --Selecting the top values
 
         else
 

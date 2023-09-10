@@ -18,7 +18,7 @@
     using MAT
 
 # --module inclusion
-    using .library
+    using Main.library
 
 ############################################ Parameters ###########################################
     file_path = "C:\\Users\\Sam Kramer\\Desktop\\Engineering\\IRES 2023\\IRES 2023 -- Acoustics Array\\Test Data\\Testing 20JUL23\\Bat1_Trial2_20JUL2023.mat";
@@ -57,18 +57,28 @@
     end
 
 # --Feedback message
+    println("Chirp Finder Beginning")
+    println("This May Take a Moment...")
 
 
-# --Filter data out
+# --Filter data out {Calls filter_data()}
 
 
 ####################################### Time Domain Section #######################################
 
+# --Create initial guesses in time domain {Calls time_domain_finder()}
 
+
+# --Outline confirmation message
+    println("Time Domain Finder Done")
 
 ####################################### Freq Domain Section #######################################
 
+# --Create guesses from frequency domain methods {Calls freq_domain_finder()}
 
+
+# --Outline confirmation message
+    println("Frequency Domain Finder Done")
 
 ####################################### Create Spectrograms #######################################
 
