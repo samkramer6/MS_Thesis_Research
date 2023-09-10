@@ -9,7 +9,7 @@
 
 # Using statements
     using Plots
-    using DSP    # Signal Processing Package for spectrogram()
+    using DSP           # Signal Processing Package for spectrogram()
     using Statistics
 
 function spectrogram_function(data, fs, time_start, time_end)
@@ -42,9 +42,8 @@ function spectrogram_function(data, fs, time_start, time_end)
         N = length(time);
         time = LinRange(time_start, time_end, N);       # linspace equivalent
 
-    # # --Create Heatmap
+    # --Create Heatmap
         y = Plots.heatmap(time, spec.freq, spec.power, xlabel = "Time (s)", ylabel = "Frequency (Hz)", title = "Spectrogram", colorbar_title = "Power (Linear)", color = :jet);
-        # colorbar(y, label = "Power (Linear)")
         display(y)
 
     return
