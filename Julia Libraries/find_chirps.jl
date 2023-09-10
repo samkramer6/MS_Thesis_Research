@@ -38,28 +38,28 @@
     try
         if bat_type[1] == 'H'
             # --Load in Hipposiderus call
-
+            Hippo_data = "C:\\Users\\Sam Kramer\\Desktop\\Engineering\\Chirp Detection Algorithm\\Matlab Libraries\\Hippo_example_chirp.mat";
+            CFFM_chirp = matread(Hippo_data);
+            CFFM_chirp = vec(CFFM_chirp["model_chirp"]);
 
         elseif bat_type[1] == 'R'
             # --Load in Rhinolophus call
-
-
-        else
-            # --Load in only FM_chirp
-
+            Rhino_data = "C:\\Users\\Sam Kramer\\Desktop\\Engineering\\Chirp Detection Algorithm\\Matlab Libraries\\Rhino_example_chirp.mat"
+            CFFM_chirp = matread(Rhino_data);
+            CFFM_chirp = vec(CFFM_chirp["model_chirp"]);
 
         end
     catch
-        # --Load in only FM_chirp
-
-
+        println("Error Loading Template Data: Testing Only Against Linear Chirp")
 
     end
+
+# --Create the FM_chirp
+    FM_chirp = create_chirp(120000, 100000, 0.05, fs, "false");
 
 # --Feedback message
     println("Chirp Finder Beginning")
     println("This May Take a Moment...")
-
 
 # --Filter data out {Calls filter_data()}
 
