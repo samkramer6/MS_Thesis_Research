@@ -25,65 +25,71 @@
     mic_num = 1;
     bat_type = "Hipposiderus";
 
-########################################## Setup Section ##########################################
+##################################### Function Definition #########################################
 
-# --Load in dataset and select mic dataset
-    (mic_data, time, fs) = load_data(file_path);
-    mic_data = vec(mic_data[:, mic_num]);
+function find_chirps(file_path, mic_num, bat_type)
 
-# --Select Bat Call Comparison
-    bat_type = String(bat_type);
-    bat_type = uppercase(bat_type);
+    # --Load in dataset and select mic dataset
+        (mic_data, time, fs) = load_data(file_path);
+        mic_data = vec(mic_data[:, mic_num]);
 
-    try
-        if bat_type[1] == 'H'
-            # --Load in Hipposiderus call
-            Hippo_data = "C:\\Users\\Sam Kramer\\Desktop\\Engineering\\Chirp Detection Algorithm\\Matlab Libraries\\Hippo_example_chirp.mat";
-            CFFM_chirp = matread(Hippo_data);
-            CFFM_chirp = vec(CFFM_chirp["model_chirp"]);
+    # --Select Bat Call Comparison
+        bat_type = String(bat_type);
+        bat_type = uppercase(bat_type);
 
-        elseif bat_type[1] == 'R'
-            # --Load in Rhinolophus call
-            Rhino_data = "C:\\Users\\Sam Kramer\\Desktop\\Engineering\\Chirp Detection Algorithm\\Matlab Libraries\\Rhino_example_chirp.mat"
-            CFFM_chirp = matread(Rhino_data);
-            CFFM_chirp = vec(CFFM_chirp["model_chirp"]);
+        try
+            if bat_type[1] == 'H'
+                # --Load in Hipposiderus call
+                    Hippo_data = "C:\\Users\\Sam Kramer\\Desktop\\Engineering\\Chirp Detection Algorithm\\Matlab Libraries\\Hippo_example_chirp.mat";
+                    CFFM_chirp = matread(Hippo_data);
+                    CFFM_chirp = vec(CFFM_chirp["model_chirp"]);
 
+            elseif bat_type[1] == 'R'
+                # --Load in Rhinolophus call
+                    Rhino_data = "C:\\Users\\Sam Kramer\\Desktop\\Engineering\\Chirp Detection Algorithm\\Matlab Libraries\\Rhino_example_chirp.mat"
+                    CFFM_chirp = matread(Rhino_data);
+                    CFFM_chirp = vec(CFFM_chirp["model_chirp"]);
+
+            end
+        catch
+            println("Error Loading Template Data: Testing Only Against Linear Chirp")
         end
-    catch
-        println("Error Loading Template Data: Testing Only Against Linear Chirp")
 
-    end
+    # --Create the FM_chirp
+        FM_chirp = create_chirp(120000, 100000, 0.05, fs, "false");
 
-# --Create the FM_chirp
-    FM_chirp = create_chirp(120000, 100000, 0.05, fs, "false");
+    # --Feedback message
+        println("Chirp Finder Beginning")
+        println("This May Take a Moment...")
 
-# --Feedback message
-    println("Chirp Finder Beginning")
-    println("This May Take a Moment...")
+    # --Filter data out {Calls filter_data()}
+        filtered_data = filter_data(data, fs);
 
-# --Filter data out {Calls filter_data()}
+    ####################################### Time Domain Section #######################################
 
+    # --Create initial guesses in time domain {Calls time_domain_finder()}
+        time_indeces = time_domain_finder(filtered_data, CFFM_chirp, FM_chirp);
 
-####################################### Time Domain Section #######################################
+    # --Outline confirmation message
+        println("Time Domain Finder Done")
 
-# --Create initial guesses in time domain {Calls time_domain_finder()}
+    ####################################### Freq Domain Section #######################################
 
-
-# --Outline confirmation message
-    println("Time Domain Finder Done")
-
-####################################### Freq Domain Section #######################################
-
-# --Create guesses from frequency domain methods {Calls freq_domain_finder()}
+    # --Create guesses from frequency domain methods {Calls freq_domain_finder()}
 
 
-# --Outline confirmation message
-    println("Frequency Domain Finder Done")
+    # --Outline confirmation message
+        println("Frequency Domain Finder Done")
 
-####################################### Create Spectrograms #######################################
+    ####################################### Create Spectrograms #######################################
 
-# --Compare datasets
+    # --Compare datasets
 
 
-# --
+    # --Output and Save spectrograms
 
+
+    # --Outline confirmation message
+        println("Finder Done")
+
+end     # End function

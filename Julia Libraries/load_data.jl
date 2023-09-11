@@ -1,6 +1,10 @@
 #=  load_data()
-    This is the load data function that
+    This is the load data function that is used to load any data that a user wants to analyze. 
+    This uses one package and is a very basic function that is used multiple times in the find
+    chirps functions.
 
+    Sam Kramer
+    August 10th, 2023
 =#
 
 using MAT
@@ -17,6 +21,6 @@ function load_data(file_path)
         fs = round(1/(time[10] - time[9]));
 
     # --Outline
-        print("Data Loaded Successfully")
+        println("Data Loaded Successfully")
         return mic_data, time, fs
 end
