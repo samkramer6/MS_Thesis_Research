@@ -46,7 +46,8 @@ function find_chirps(file_path, mic_num, bat_type)
 
             elseif bat_type[1] == 'R'
                 # --Load in Rhinolophus call
-                    Rhino_data = "C:\\Users\\Sam Kramer\\Desktop\\Engineering\\Chirp Detection Algorithm\\Matlab Libraries\\Rhino_example_chirp.mat"
+                    Rhino_data = "C:\\Users\\Sam Kramer\\Desktop\\Engineering\\Chirp Detection Algorithm\\Matlab Libraries\\Rhino_example_chirp.mat";
+                    
                     CFFM_chirp = matread(Rhino_data);
                     CFFM_chirp = vec(CFFM_chirp["model_chirp"]);
 

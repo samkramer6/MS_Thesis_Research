@@ -13,12 +13,22 @@ using Plots
 # ╔═╡ 3121abaa-d3dd-4a58-9672-098b10d52043
 using DSP
 
+# ╔═╡ a28e880a-5a6e-44e1-b556-2c47d9cfb695
+# --Using statements
+using FFTW
+
+# ╔═╡ 19cb2701-bfe8-4906-b00f-0d3247c27b8e
+using Statistics
+
 # ╔═╡ 2b5f75e0-511a-11ee-197f-35f50e524ee0
 md"# Learning Julia Notebook
 This will be an interactive notebook for learning Julia and particulartly to learn the signals processing techniques that I learned in previous classes. This can be a test bench area for the development of the code for my thesis work.
 
 ## Topics:
 1. Filtering of data
+1. FFT of datasets
+1. Spectrograms of datasets
+
 
 Sam Kramer
 "
@@ -91,15 +101,58 @@ plot(t, signal_2, xlabel = "Time (s)", ylabel = "Signal Amplitude", title = "Ori
 # ╔═╡ ee9439e5-7e18-4631-bfb6-5b33859cc6bc
 md"As we can see there is a significant issue with the amplitudes, however, we did retain the frequency content from our signal."
 
+# ╔═╡ c4d74563-af78-48ec-8d94-5461024e86fc
+md"## 2. Fourier Transforms in Julia"
+
+# ╔═╡ 7f2a0f9e-ef0f-4deb-b349-47911dc31867
+# --Taking FFT of the noisy dataset
+begin
+	mzero_noisy_signal = noisy_signal .- mean(noisy_signal);
+	f_noisy_signal = fft(mzero_noisy_signal);
+	f_noisy_signal_mag = abs.(f_noisy_signal);
+	FNS_amplitude = 2 .* f_noisy_signal_mag ./ length(f_noisy_signal_mag);
+
+	mzero_filtered_signal = filtered_signal .- mean(filtered_signal);
+	f_filtered_signal = fft(mzero_filtered_signal);
+	f_filtered_signal_mag = abs.(f_filtered_signal);
+	FFS_amplitude = 2 .* f_filtered_signal_mag ./ length(f_filtered_signal_mag);
+
+	T = maximum(t);
+	frequency = vec(0:(1/T):length(noisy_signal) - (1/T));
+
+end
+
+# ╔═╡ fce8672e-d3da-4da7-b16b-fdfaace4cc53
+# --Plotting two FFTs
+begin
+	plot(frequency, FNS_amplitude, xlabel = "Frequency (Hz)", ylabel = "Amplitude", title = "Noisy Signal FFT")
+	xlims!(0, 500)
+end
+
+# ╔═╡ f5e4902a-cf4a-4fb1-8b00-304e05ccee4a
+begin
+	plot(frequency, FFS_amplitude, xlabel = "Frequency (Hz)", ylabel = "Amplitude", title = "Filtered FFT Signal")
+	xlims!(0, 500)
+end
+
+# ╔═╡ dd655fc7-520e-4523-a085-afe91dc0cc58
+md"We can see how filtering our signal actually removed the other two peaks at 120 and 10 Hz. There is also a much flatter curve out past the bounds of the filter whereas in the past noisy plot there is a large amount of frequency content in the higher bounds. We can also see that the amplitude is the same in both the plots for the 60Hz signal"
+
+# ╔═╡ 72c3d091-d24f-4030-85d3-0e1274f3203d
+md"## 3. Spectrogram of Signal"
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 DSP = "717857b8-e6f2-59f4-9121-6e50c889abd2"
+FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 SignalAnalysis = "df1fea92-c066-49dd-8b36-eace3378ea47"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
 DSP = "~0.7.8"
+FFTW = "~1.7.1"
 Plots = "~1.39.0"
 SignalAnalysis = "~0.6.0"
 """
@@ -110,7 +163,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.3"
 manifest_format = "2.0"
-project_hash = "1b25accb75517cca80c2597bcce68a7f6a20d7f6"
+project_hash = "650aceaeb09c89fb36d05ed2bf7791a6e0cc0d62"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra", "Test"]
@@ -1364,12 +1417,20 @@ version = "1.4.1+0"
 # ╠═855b00d0-d694-4e74-a8fd-478095b5763c
 # ╠═d5a0871a-68cc-4396-a778-d993dd495bda
 # ╟─d09cf558-e330-4b1f-97ac-b6395a39072d
-# ╠═3e374048-cec2-45e6-8f17-6c509a6f4003
+# ╟─3e374048-cec2-45e6-8f17-6c509a6f4003
 # ╠═ad57997c-921b-4c95-89ad-e11d7b0845e2
 # ╠═9078eb1b-76f1-465f-a6da-4df77267de2e
-# ╠═a41abcae-08bc-4fc6-8e0d-09f1139dfe8e
+# ╟─a41abcae-08bc-4fc6-8e0d-09f1139dfe8e
 # ╟─74f932f7-be67-475b-a4ba-761b252df18d
-# ╠═52ec9a39-f77c-4ca2-83c6-45154fbfa963
+# ╟─52ec9a39-f77c-4ca2-83c6-45154fbfa963
 # ╟─ee9439e5-7e18-4631-bfb6-5b33859cc6bc
+# ╟─c4d74563-af78-48ec-8d94-5461024e86fc
+# ╠═a28e880a-5a6e-44e1-b556-2c47d9cfb695
+# ╠═19cb2701-bfe8-4906-b00f-0d3247c27b8e
+# ╠═7f2a0f9e-ef0f-4deb-b349-47911dc31867
+# ╟─fce8672e-d3da-4da7-b16b-fdfaace4cc53
+# ╟─f5e4902a-cf4a-4fb1-8b00-304e05ccee4a
+# ╟─dd655fc7-520e-4523-a085-afe91dc0cc58
+# ╟─72c3d091-d24f-4030-85d3-0e1274f3203d
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
