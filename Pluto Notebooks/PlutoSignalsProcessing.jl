@@ -20,8 +20,11 @@ using FFTW
 # ╔═╡ 19cb2701-bfe8-4906-b00f-0d3247c27b8e
 using Statistics
 
+# ╔═╡ 34275937-61cd-4d4d-aeb9-6ca9366835c7
+using FindPeaks1D
+
 # ╔═╡ 2b5f75e0-511a-11ee-197f-35f50e524ee0
-md"# Learning Julia Notebook
+md"# Julia Crashcourse Notebook
 This will be an interactive notebook for learning Julia and particulartly to learn the signals processing techniques that I learned in previous classes. This can be a test bench area for the development of the code for my thesis work.
 
 ## Topics:
@@ -112,7 +115,7 @@ begin
 	f_noisy_signal_mag = abs.(f_noisy_signal);
 	FNS_amplitude = 2 .* f_noisy_signal_mag ./ length(f_noisy_signal_mag);
 
-	mzero_filtered_signal = filtered_signal .- mean(filtered_signal);
+	mzero_filtered_signal = vec(filtered_signal .- mean(filtered_signal));
 	f_filtered_signal = fft(mzero_filtered_signal);
 	f_filtered_signal_mag = abs.(f_filtered_signal);
 	FFS_amplitude = 2 .* f_filtered_signal_mag ./ length(f_filtered_signal_mag);
@@ -141,11 +144,56 @@ md"We can see how filtering our signal actually removed the other two peaks at 1
 # ╔═╡ 72c3d091-d24f-4030-85d3-0e1274f3203d
 md"## 3. Spectrogram of Signal"
 
+# ╔═╡ 96704c1f-51ae-40bc-bec9-c6916efc7cb4
+md"This section will be on the development of a spectrogram for all the signals that we made in the previous sections"
+
+# ╔═╡ 644f8410-ee1e-4a0c-a8f7-2bb54fccb8ef
+# --Noisy Signal Spectrogram
+begin
+	spec1 = spectrogram(vec(noisy_signal), 1000, 900, fs = fs);
+	Plots.heatmap(spec1.time, spec1.freq, spec1.power, xlabel = "Time(s)", ylabel = "Frequency", title = "Spectrogram of Noisy Signal", colorbar_title = "Power (linear)", color = :jet);
+	ylims!(0, 150);
+end
+
+# ╔═╡ bbfdb4b9-3c30-4897-86e4-b6a314f0a2b5
+# --Spectrogram of filtered signal
+begin
+	spec2 = spectrogram(vec(filtered_signal), 1000, 900, fs = fs);
+	Plots.heatmap(spec2.time, spec2.freq, spec2.power, xlabel = "Time(s)", ylabel = "Frequency", title = "Spectrogram of Filtered Signal", colorbar_title = "Power (linear)", color = :jet);
+	ylims!(0, 150);
+end
+
+# ╔═╡ f845c408-4f65-47c1-98f3-d6390b9f5deb
+md"As we can see above there is one continuous line for the spectrograms with the filtered signal, with the highest intensity, so they have the dark red colors. The noisy spectrogram has alot of noise in the low ranges, but there are three lines of lower intensity at the 120 and 10 Hz ranges."
+
+# ╔═╡ 90aff9ce-9fe2-4531-8226-39fed4292a27
+md"## 4. Finding Peaks of Data
+This section will be on finding peaks within data to see how that works."
+
+# ╔═╡ a2481448-f403-41ed-8aed-802be5cf5c17
+peak_ind, ~ = findpeaks1d(vec(filtered_signal), height = 0.4, distance = 11);
+
+# ╔═╡ 4309762f-4d09-4e7c-b932-c80ed65face8
+# --Sort peak values by descending order
+begin
+	pks = [vec(filtered_signal[peak_ind]) vec(peak_ind)];
+	A = sortperm(pks[:, 1], rev = true);		
+	sorted_pks = pks[A,:];
+end
+
+# ╔═╡ e9558f80-e22c-4ab0-aebc-6f6b255e38a6
+# --Take only top 5 indeces and make a matrix of them
+begin
+	max_5_pks = sorted_pks[1:5,:];
+	ind = max_5_pks[:,2];
+end
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 DSP = "717857b8-e6f2-59f4-9121-6e50c889abd2"
 FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
+FindPeaks1D = "d8961e24-b28b-4efb-8e50-1c680b9a7431"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 SignalAnalysis = "df1fea92-c066-49dd-8b36-eace3378ea47"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
@@ -153,6 +201,7 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 [compat]
 DSP = "~0.7.8"
 FFTW = "~1.7.1"
+FindPeaks1D = "~0.1.8"
 Plots = "~1.39.0"
 SignalAnalysis = "~0.6.0"
 """
@@ -163,7 +212,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.3"
 manifest_format = "2.0"
-project_hash = "650aceaeb09c89fb36d05ed2bf7791a6e0cc0d62"
+project_hash = "be848a69d5362dde5cd509244f12c5eb6c2de188"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra", "Test"]
@@ -412,6 +461,11 @@ deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
 git-tree-sha1 = "a20eaa3ad64254c61eeb5f230d9306e937405434"
 uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
 version = "1.6.1"
+
+[[deps.FindPeaks1D]]
+git-tree-sha1 = "103c0a3502725e3b2e49afe0035bd68834655785"
+uuid = "d8961e24-b28b-4efb-8e50-1c680b9a7431"
+version = "0.1.8"
 
 [[deps.FiniteDiff]]
 deps = ["ArrayInterface", "LinearAlgebra", "Requires", "Setfield", "SparseArrays", "StaticArrays"]
@@ -1432,5 +1486,14 @@ version = "1.4.1+0"
 # ╟─f5e4902a-cf4a-4fb1-8b00-304e05ccee4a
 # ╟─dd655fc7-520e-4523-a085-afe91dc0cc58
 # ╟─72c3d091-d24f-4030-85d3-0e1274f3203d
+# ╟─96704c1f-51ae-40bc-bec9-c6916efc7cb4
+# ╠═644f8410-ee1e-4a0c-a8f7-2bb54fccb8ef
+# ╠═bbfdb4b9-3c30-4897-86e4-b6a314f0a2b5
+# ╟─f845c408-4f65-47c1-98f3-d6390b9f5deb
+# ╟─90aff9ce-9fe2-4531-8226-39fed4292a27
+# ╠═34275937-61cd-4d4d-aeb9-6ca9366835c7
+# ╠═a2481448-f403-41ed-8aed-802be5cf5c17
+# ╠═4309762f-4d09-4e7c-b932-c80ed65face8
+# ╠═e9558f80-e22c-4ab0-aebc-6f6b255e38a6
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
