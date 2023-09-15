@@ -23,6 +23,9 @@ using Statistics
 # ╔═╡ 34275937-61cd-4d4d-aeb9-6ca9366835c7
 using FindPeaks1D
 
+# ╔═╡ 2f0debe9-18c1-415d-b7f1-44891d45d38a
+using StatsBase
+
 # ╔═╡ 2b5f75e0-511a-11ee-197f-35f50e524ee0
 md"# Julia Crashcourse Notebook
 This will be an interactive notebook for learning Julia and particulartly to learn the signals processing techniques that I learned in previous classes. This can be a test bench area for the development of the code for my thesis work.
@@ -188,6 +191,35 @@ begin
 	ind = max_5_pks[:,2];
 end
 
+# ╔═╡ fdd6c199-30c6-4211-899f-116073c299df
+md"## 5. Correlations
+This section will work on using the cross correlation functions in julia to ensure that I understand how they work"
+
+# ╔═╡ f80ceb46-ce30-4436-96d4-1eaf5b008cfd
+# --Finding cross correlation of noisy_signal
+begin
+	lags = 0:length(noisy_signal) - 1;
+	corr = vec(autocor(noisy_signal, lags, demean = true));
+end
+
+# ╔═╡ f08797de-1785-426b-9ca3-1f283bf4336a
+# --Plot
+	plot(corr, xlabel = "Lags", ylabel = "Correlation Amplitude", title = "Single Sided Autocorrelation of data")
+
+# ╔═╡ f603e099-e18d-436e-9873-7082e219cb34
+md"From this we can see that there is a single sided auto correlation and we must specify that the lags are equivalent to fs, not length = 2*M + 1. This is a function of the actual autocor() function that is from the StatsBase library in Julia"
+
+# ╔═╡ a1bb7a8d-8c69-4002-b93b-98fa839d4a5c
+# --Finding a cross-correlation between the noisy_signal with signal_1
+	cross_corr_1 = crosscor(noisy_signal, signal_1, lags, demean = true);
+
+# ╔═╡ 4ad24ac0-4e82-4111-9206-e74c2c0d8bc5
+# --Plot the cross-correlation
+	plot(lags, cross_corr_1, xlabel = "Lags (τ)", ylabel = "cross-correlation amplitude", title = "cross-correlation of Noisy Signal to 10 Hz signal", legend = false)
+
+# ╔═╡ b1df0466-9d84-4ec4-a2b9-9ea62df7c2bc
+md"This is the cross-correlation of the two signals, it is non-normalized, if we want the non-normalized function we need to use the crosscov() function"
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
@@ -197,6 +229,7 @@ FindPeaks1D = "d8961e24-b28b-4efb-8e50-1c680b9a7431"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 SignalAnalysis = "df1fea92-c066-49dd-8b36-eace3378ea47"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
 DSP = "~0.7.8"
@@ -204,6 +237,7 @@ FFTW = "~1.7.1"
 FindPeaks1D = "~0.1.8"
 Plots = "~1.39.0"
 SignalAnalysis = "~0.6.0"
+StatsBase = "~0.34.0"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -212,7 +246,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.3"
 manifest_format = "2.0"
-project_hash = "be848a69d5362dde5cd509244f12c5eb6c2de188"
+project_hash = "8db2451f2243afbb40c13dfb3d8992b73c077ec8"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra", "Test"]
@@ -1495,5 +1529,13 @@ version = "1.4.1+0"
 # ╠═a2481448-f403-41ed-8aed-802be5cf5c17
 # ╠═4309762f-4d09-4e7c-b932-c80ed65face8
 # ╠═e9558f80-e22c-4ab0-aebc-6f6b255e38a6
+# ╟─fdd6c199-30c6-4211-899f-116073c299df
+# ╠═2f0debe9-18c1-415d-b7f1-44891d45d38a
+# ╠═f80ceb46-ce30-4436-96d4-1eaf5b008cfd
+# ╟─f08797de-1785-426b-9ca3-1f283bf4336a
+# ╟─f603e099-e18d-436e-9873-7082e219cb34
+# ╠═a1bb7a8d-8c69-4002-b93b-98fa839d4a5c
+# ╟─4ad24ac0-4e82-4111-9206-e74c2c0d8bc5
+# ╟─b1df0466-9d84-4ec4-a2b9-9ea62df7c2bc
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

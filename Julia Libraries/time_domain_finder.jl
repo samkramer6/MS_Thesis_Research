@@ -18,9 +18,10 @@ using StatsBase
 function time_domain_finder(filtered_data,fs,FM_chirp,CFFM_chirp,weight)
 
     # --Cross correlate data sets
-        FM_corr = crosscor(filtered_data, FM_chirp);
+        lags = 0:length(filtered_data) - 1;
+        FM_corr = crosscor(filtered_data, FM_chirp, lags, demean = true);
         FM_corr = vec(FM_corr);
-        CFFM_corr = crosscor(filtered_data, CFFM_chirp);
+        CFFM_corr = crosscor(filtered_data, CFFM_chirp, lags, demean = true);
         CFFM_corr = vec(CFFM_corr);
 
     # --Reformat data to find just the single sided cross correlation
