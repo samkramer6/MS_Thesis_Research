@@ -5,12 +5,8 @@
 
 =#
 
-# --Include statements
-
-
 # --Using statements
-    using FindPeaks1D
-
+using FindPeaks1D
 
 # --Function Definition
 function five_peak_finder(corr, peak_threshold)

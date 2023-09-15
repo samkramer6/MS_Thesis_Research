@@ -196,7 +196,7 @@ md"## 5. Correlations
 This section will work on using the cross correlation functions in julia to ensure that I understand how they work"
 
 # ╔═╡ f80ceb46-ce30-4436-96d4-1eaf5b008cfd
-# --Finding cross correlation of noisy_signal
+# --Finding Autocorrelation of noisy_signal
 begin
 	lags = 0:length(noisy_signal) - 1;
 	corr = vec(autocor(noisy_signal, lags, demean = true));
