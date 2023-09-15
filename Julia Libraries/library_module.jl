@@ -10,17 +10,16 @@ module library
         include("spectrogram_function.jl")
         include("five_peak_finder.jl")
         include("create_chirp.jl")
-        include("spectrogram_function.jl")
         include("filter_data.jl")
-        include("five_peak_finder.jl")
+        include("compare_function.jl")
+
 
     # --Export List
         export load_data
         export spectrogram_function
         export five_peak_finder
-        export spectrogram_function
         export create_chirp
         export filter_data
-        export five_peak_finder
+        export compare_function
 
 end

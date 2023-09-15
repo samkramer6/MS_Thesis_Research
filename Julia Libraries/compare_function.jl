@@ -14,11 +14,34 @@
     September 14th, 2023
 =#
 
-# --Include statements
+# --Create another while function to remove the nested loops below
+function while_indeces(indeces, new_ind)
 
+    # --Loop through each value of the indeces
+        okay = "true"
+        IIQ = indeces[i];
+        k = 1;
+        while k <= length(new_ind)
 
-# --Using statements
+            # --Check difference
+                diff_ind = abs.(new_ind[k] - IIQ);
 
+            # --If difference is enough, continue
+                if diff_ind >= threshold
+                    k = k+1;
+                else
+                    okay = "false";
+                break
+                end
+        end
+
+    # --Save value into new_ind
+        if okay == "true"
+            new_ind = [new ind; IIQ];
+        end
+
+    return new_ind
+end
 
 # --Function Definition
 function compare_function(indeces, threshold)
@@ -29,31 +52,9 @@ function compare_function(indeces, threshold)
     # --Loop through entire indeces array set
         for i = 2:eachindex(indeces)
 
-            # --Setup Loop 
-                okay = "true"
-                IIQ = indeces[i];
-
-            # --Check across previous values in new_ind
-                k = 1;
-                while k <= length(new_ind)
-
-                    # --Check difference
-                        diff_ind = abs.(new_ind[k] - IIQ);
-
-                    # --If difference is enough, continue
-                        if diff_ind >= threshold
-                            k = k+1;
-                        else
-                            okay = "false";
-                            break
-                        end
-                end
+            # --Call while_indeces
+                new_ind = while_indeces(indeces, new_ind);
             
-            # --Save value into new_ind
-                if okay == "true"
-                    new_ind = [new ind; IIQ];
-                end
-
         end
     
     return new_ind
