@@ -15,7 +15,7 @@
 =#
 
 # --Create another while function to remove the nested loops below
-function while_indeces(indeces, new_ind)
+function while_indeces(indeces, new_ind, threshold, i)
 
     # --Loop through each value of the indeces
         okay = "true"
@@ -37,7 +37,7 @@ function while_indeces(indeces, new_ind)
 
     # --Save value into new_ind
         if okay == "true"
-            new_ind = [new ind; IIQ];
+            new_ind = [new_ind; IIQ];
         end
 
     return new_ind
@@ -50,12 +50,14 @@ function compare_function(indeces, threshold)
         new_ind = [indeces[1]];
 
     # --Loop through entire indeces array set
-        for i = 2:eachindex(indeces)
+        for i = 2:length(indeces)
 
             # --Call while_indeces
-                new_ind = while_indeces(indeces, new_ind);
-            
+                new_ind = while_indeces(indeces, new_ind, threshold, i);
         end
+
+	# --Sort new_ind
+        new_ind = sort(new_ind);
     
     return new_ind
 end

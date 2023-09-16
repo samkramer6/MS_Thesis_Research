@@ -43,13 +43,14 @@ function find_chirps(file_path, mic_num, bat_type)
                     Hippo_data = "C:\\Users\\Sam Kramer\\Desktop\\Engineering\\Chirp Detection Algorithm\\Matlab Libraries\\Hippo_example_chirp.mat";
                     CFFM_chirp = matread(Hippo_data);
                     CFFM_chirp = vec(CFFM_chirp["model_chirp"]);
+                    weight = 1.3;
 
             elseif bat_type[1] == 'R'
                 # --Load in Rhinolophus call
                     Rhino_data = "C:\\Users\\Sam Kramer\\Desktop\\Engineering\\Chirp Detection Algorithm\\Matlab Libraries\\Rhino_example_chirp.mat";
-                    
                     CFFM_chirp = matread(Rhino_data);
                     CFFM_chirp = vec(CFFM_chirp["model_chirp"]);
+                    weight = 1.3;
 
             end
         catch
@@ -69,7 +70,7 @@ function find_chirps(file_path, mic_num, bat_type)
     ####################################### Time Domain Section #######################################
 
     # --Create initial guesses in time domain {Calls time_domain_finder()}
-        time_indeces = time_domain_finder(filtered_data, CFFM_chirp, FM_chirp);
+        time_indeces = time_domain_finder(filtered_data, CFFM_chirp, FM_chirp, weight);
 
     # --Outline confirmation message
         println("Time Domain Finder Done")
