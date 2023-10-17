@@ -1,4 +1,4 @@
-#=  
+#=  train.jl
 
 =#
 
@@ -25,4 +25,5 @@
             kernel = kernel_gauss(f_sample, f_sample, sigma);
             correlator.f_correlator = target_fft./(kernel .+ lambda);
 
+        return correlator
     end
