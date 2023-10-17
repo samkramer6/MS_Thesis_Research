@@ -4,240 +4,66 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ cdc95ed2-e160-435d-9873-d5eddeecfbbe
-using SignalAnalysis
-
-# ╔═╡ 67efa7a1-1dee-4d52-b483-8a12323f3e2d
-using Plots
-
-# ╔═╡ 3121abaa-d3dd-4a58-9672-098b10d52043
-using DSP
-
-# ╔═╡ a28e880a-5a6e-44e1-b556-2c47d9cfb695
-# --Using statements
-using FFTW
-
-# ╔═╡ 19cb2701-bfe8-4906-b00f-0d3247c27b8e
-using Statistics
-
-# ╔═╡ 34275937-61cd-4d4d-aeb9-6ca9366835c7
-using FindPeaks1D
-
-# ╔═╡ 2f0debe9-18c1-415d-b7f1-44891d45d38a
-using StatsBase
-
-# ╔═╡ 2b5f75e0-511a-11ee-197f-35f50e524ee0
-md"# Julia Crashcourse Notebook
-This will be an interactive notebook for learning Julia and particulartly to learn the signals processing techniques that I learned in previous classes. This can be a test bench area for the development of the code for my thesis work.
-
-## Topics:
-1. Filtering of data
-1. FFT of datasets
-1. Spectrograms of datasets
-
-
-Sam Kramer
-"
-
-# ╔═╡ 3c38a6b0-19cc-41ee-af78-33028e5ca936
-md"## 1. Filtering Data"
-
-# ╔═╡ 855b00d0-d694-4e74-a8fd-478095b5763c
-# --Create initial signals
+# ╔═╡ 4a73c8f5-75ca-4865-a709-0f84b0a8bc44
+# --using statements
 begin
-	fs = 1000;
-	t = 0:1/fs:1;
-	amplitude = 1;
-	f_1 = 10;
-	f_2 = 60;
-	f_3 = 120;
-	f = vec([f_1; f_2; f_3] .* 2*pi);
-	signal_1 = amplitude.*sin.(f[1]*t);
-	signal_2 = amplitude.*sin.(f[2]*t);
-	signal_3 = amplitude.*sin.(f[3]*t);
-	signal = (signal_1 + signal_2 + signal_3)/3;
+	using Plots
+	using Random
 end
 
-# ╔═╡ d5a0871a-68cc-4396-a778-d993dd495bda
-# --Injection of noise
+# ╔═╡ 56fa6e90-6168-11ee-221b-a70ef5c757dd
+md"# Kernel Cross Correlation Algorithm Work
+This is going to be work on the Kernel Cross Correlation that will replace the correlation algorithms that are being used in the chirp detection algorithm."
+
+# ╔═╡ 8380a7bf-1ecc-44c7-8516-31d328305b2d
+md"## 1. Kernel Selection
+We will be using a bessel function kernel for the original kernel function that is used in the creation of the correlation data."
+
+# ╔═╡ b061dfdd-520e-4cf3-a87a-bfaf7ba320a6
+# --Setup original data set
 begin
-	random_noise = rand(Float64,  (length(signal),1));
-	noisy_signal = signal + random_noise;
+	N = 1000;
+	X = range(start = 0, stop = 1, length = 10);
+	Y = X .* 100 .* sin.(X*2*pi);
+	plt1 = plot(X, Y, xlabel = "X", ylabel = "Y", title = "Original Dataset", label = false, seriestype = "scatter")
 end
 
-# ╔═╡ d09cf558-e330-4b1f-97ac-b6395a39072d
-md"Here we have created a noisy signal to be filtered out by our filter by adding three basic sine waves with 10Hz, 60Hz, and 120Hz frequencies. But lets say that we only want the 60Hz signal to be left. Lets see how we can develop a filter below to try and remove out the other signals plus the noise. This should return a relatively smooth 60Hz signal."
+# ╔═╡ 9b14f72f-6f83-4329-98cc-ee218a0995bc
+md"We can see that there is an above trend in our dataset that is not linearly seperable and we cannot see a clear linearaly sepearable dataset. We can extend this into the 3D plane and see how we can separate out our data."
 
-# ╔═╡ 3e374048-cec2-45e6-8f17-6c509a6f4003
-# --Plot the inital Signal
-begin
-	plot(t, noisy_signal, xlabel = "Time (s)", ylabel = "Signal Amplitude", title = "Original Unprocessed Signal", label = "Signal")
+# ╔═╡ bd8bf735-d628-40a4-9eed-0be94a14aa14
+md"The kernel that I will be using is the multiquadratic function which is described as $K_z(x) = \sqrt{||A - B||^2 + C}$"
+
+# ╔═╡ e8367c6d-5c21-49ff-8985-c097d88d2bff
+function distance(X,Y)
+
+	dist = sqrt.(abs.(X.^2 .- Y.^2));
+
+	return dist
 end
 
-# ╔═╡ ad57997c-921b-4c95-89ad-e11d7b0845e2
-# --Develop filter
+# ╔═╡ 5a5e2bb7-eb61-41a1-8090-ba7e9b65ccae
+# --Setup a Bessel Function Kernel
 begin
-	filter_order = 4
-	passband_upper = 80;
-	passband_lower = 40;
-	passband = [passband_upper, passband_lower];
-
-	response_type = Bandpass(passband_lower, passband_upper, fs = fs);
-	design_method = Butterworth(filter_order);
+	α = 1;
+	kernel_x = Array{Float64}(undef, length(Y), length(Y));
+	for i = 1:length(Y)
+		kernel_x[i,:] = sqrt.((distance(Y[i], Y[:])).^2 .+ α);
+	end
+	kernel_x
 end
 
-# ╔═╡ 9078eb1b-76f1-465f-a6da-4df77267de2e
-# --Filter Signal
-begin
-	filtered_signal = filt(digitalfilter(response_type, design_method), noisy_signal);
-end
-
-# ╔═╡ a41abcae-08bc-4fc6-8e0d-09f1139dfe8e
-# --Plot Filtered Signal
-begin
-	plot(t, filtered_signal, xlabel = "Time (s)", ylabel = "Signal Amplitude", title = "Filtered Signal", label = "Filtered Signal")
-end
-
-# ╔═╡ 74f932f7-be67-475b-a4ba-761b252df18d
-md"As we can see from above, we have developed a filter to remove all of the unwanted frequencies that were present in our signal. There are issues with the amplitude of the signal, however, we can look at the original signal_2 and compare to see how well it fits."
-
-# ╔═╡ 52ec9a39-f77c-4ca2-83c6-45154fbfa963
-plot(t, signal_2, xlabel = "Time (s)", ylabel = "Signal Amplitude", title = "Original 60Hz Signal", label = "60Hz signal we desired")
-
-# ╔═╡ ee9439e5-7e18-4631-bfb6-5b33859cc6bc
-md"As we can see there is a significant issue with the amplitudes, however, we did retain the frequency content from our signal."
-
-# ╔═╡ c4d74563-af78-48ec-8d94-5461024e86fc
-md"## 2. Fourier Transforms in Julia"
-
-# ╔═╡ 7f2a0f9e-ef0f-4deb-b349-47911dc31867
-# --Taking FFT of the noisy dataset
-begin
-	mzero_noisy_signal = noisy_signal .- mean(noisy_signal);
-	f_noisy_signal = fft(mzero_noisy_signal);
-	f_noisy_signal_mag = abs.(f_noisy_signal);
-	FNS_amplitude = 2 .* f_noisy_signal_mag ./ length(f_noisy_signal_mag);
-
-	mzero_filtered_signal = vec(filtered_signal .- mean(filtered_signal));
-	f_filtered_signal = fft(mzero_filtered_signal);
-	f_filtered_signal_mag = abs.(f_filtered_signal);
-	FFS_amplitude = 2 .* f_filtered_signal_mag ./ length(f_filtered_signal_mag);
-
-	T = maximum(t);
-	frequency = vec(0:(1/T):length(noisy_signal) - (1/T));
-
-end
-
-# ╔═╡ fce8672e-d3da-4da7-b16b-fdfaace4cc53
-# --Plotting two FFTs
-begin
-	plot(frequency, FNS_amplitude, xlabel = "Frequency (Hz)", ylabel = "Amplitude", title = "Noisy Signal FFT")
-	xlims!(0, 500)
-end
-
-# ╔═╡ f5e4902a-cf4a-4fb1-8b00-304e05ccee4a
-begin
-	plot(frequency, FFS_amplitude, xlabel = "Frequency (Hz)", ylabel = "Amplitude", title = "Filtered FFT Signal")
-	xlims!(0, 500)
-end
-
-# ╔═╡ dd655fc7-520e-4523-a085-afe91dc0cc58
-md"We can see how filtering our signal actually removed the other two peaks at 120 and 10 Hz. There is also a much flatter curve out past the bounds of the filter whereas in the past noisy plot there is a large amount of frequency content in the higher bounds. We can also see that the amplitude is the same in both the plots for the 60Hz signal"
-
-# ╔═╡ 72c3d091-d24f-4030-85d3-0e1274f3203d
-md"## 3. Spectrogram of Signal"
-
-# ╔═╡ 96704c1f-51ae-40bc-bec9-c6916efc7cb4
-md"This section will be on the development of a spectrogram for all the signals that we made in the previous sections"
-
-# ╔═╡ 644f8410-ee1e-4a0c-a8f7-2bb54fccb8ef
-# --Noisy Signal Spectrogram
-begin
-	spec1 = spectrogram(vec(noisy_signal), 1000, 900, fs = fs);
-	Plots.heatmap(spec1.time, spec1.freq, spec1.power, xlabel = "Time(s)", ylabel = "Frequency", title = "Spectrogram of Noisy Signal", colorbar_title = "Power (linear)", color = :jet);
-	ylims!(0, 150);
-end
-
-# ╔═╡ bbfdb4b9-3c30-4897-86e4-b6a314f0a2b5
-# --Spectrogram of filtered signal
-begin
-	spec2 = spectrogram(vec(filtered_signal), 1000, 900, fs = fs);
-	Plots.heatmap(spec2.time, spec2.freq, spec2.power, xlabel = "Time(s)", ylabel = "Frequency", title = "Spectrogram of Filtered Signal", colorbar_title = "Power (linear)", color = :jet);
-	ylims!(0, 150);
-end
-
-# ╔═╡ f845c408-4f65-47c1-98f3-d6390b9f5deb
-md"As we can see above there is one continuous line for the spectrograms with the filtered signal, with the highest intensity, so they have the dark red colors. The noisy spectrogram has alot of noise in the low ranges, but there are three lines of lower intensity at the 120 and 10 Hz ranges."
-
-# ╔═╡ 90aff9ce-9fe2-4531-8226-39fed4292a27
-md"## 4. Finding Peaks of Data
-This section will be on finding peaks within data to see how that works."
-
-# ╔═╡ a2481448-f403-41ed-8aed-802be5cf5c17
-peak_ind, ~ = findpeaks1d(vec(filtered_signal), height = 0.4, distance = 11);
-
-# ╔═╡ 4309762f-4d09-4e7c-b932-c80ed65face8
-# --Sort peak values by descending order
-begin
-	pks = [vec(filtered_signal[peak_ind]) vec(peak_ind)];
-	A = sortperm(pks[:, 1], rev = true);		
-	sorted_pks = pks[A,:];
-end
-
-# ╔═╡ e9558f80-e22c-4ab0-aebc-6f6b255e38a6
-# --Take only top 5 indeces and make a matrix of them
-begin
-	max_5_pks = sorted_pks[1:5,:];
-	ind = max_5_pks[:,2];
-end
-
-# ╔═╡ fdd6c199-30c6-4211-899f-116073c299df
-md"## 5. Correlations
-This section will work on using the cross correlation functions in julia to ensure that I understand how they work"
-
-# ╔═╡ f80ceb46-ce30-4436-96d4-1eaf5b008cfd
-# --Finding Autocorrelation of noisy_signal
-begin
-	lags = 0:length(noisy_signal) - 1;
-	corr = vec(autocor(noisy_signal, lags, demean = true));
-end
-
-# ╔═╡ f08797de-1785-426b-9ca3-1f283bf4336a
-# --Plot
-	plot(corr, xlabel = "Lags", ylabel = "Correlation Amplitude", title = "Single Sided Autocorrelation of data")
-
-# ╔═╡ f603e099-e18d-436e-9873-7082e219cb34
-md"From this we can see that there is a single sided auto correlation and we must specify that the lags are equivalent to fs, not length = 2*M + 1. This is a function of the actual autocor() function that is from the StatsBase library in Julia"
-
-# ╔═╡ a1bb7a8d-8c69-4002-b93b-98fa839d4a5c
-# --Finding a cross-correlation between the noisy_signal with signal_1
-	cross_corr_1 = crosscor(noisy_signal, signal_1, lags, demean = true);
-
-# ╔═╡ 4ad24ac0-4e82-4111-9206-e74c2c0d8bc5
-# --Plot the cross-correlation
-	plot(lags, cross_corr_1, xlabel = "Lags (τ)", ylabel = "cross-correlation amplitude", title = "cross-correlation of Noisy Signal to 10 Hz signal", legend = false)
-
-# ╔═╡ b1df0466-9d84-4ec4-a2b9-9ea62df7c2bc
-md"This is the cross-correlation of the two signals, it is non-normalized, if we want the non-normalized function we need to use the crosscov() function"
+# ╔═╡ 5a174d3d-d475-4dd4-a56b-06a0df46ed04
+plot3d(X,kernel_x[:,1],Y, seriestype = "scatter")
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
-DSP = "717857b8-e6f2-59f4-9121-6e50c889abd2"
-FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
-FindPeaks1D = "d8961e24-b28b-4efb-8e50-1c680b9a7431"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-SignalAnalysis = "df1fea92-c066-49dd-8b36-eace3378ea47"
-Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
-StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
-DSP = "~0.7.8"
-FFTW = "~1.7.1"
-FindPeaks1D = "~0.1.8"
 Plots = "~1.39.0"
-SignalAnalysis = "~0.6.0"
-StatsBase = "~0.34.0"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -246,29 +72,11 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.3"
 manifest_format = "2.0"
-project_hash = "8db2451f2243afbb40c13dfb3d8992b73c077ec8"
-
-[[deps.AbstractFFTs]]
-deps = ["ChainRulesCore", "LinearAlgebra", "Test"]
-git-tree-sha1 = "d92ad398961a3ed262d8bf04a1a2b8340f915fef"
-uuid = "621f4979-c628-5d54-868e-fcf4e3e8185c"
-version = "1.5.0"
-
-[[deps.Adapt]]
-deps = ["LinearAlgebra", "Requires"]
-git-tree-sha1 = "76289dc51920fdc6e0013c872ba9551d54961c24"
-uuid = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-version = "3.6.2"
+project_hash = "5b4e49f2fb4c10833036b98dffd1a7193cb72151"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
 version = "1.1.1"
-
-[[deps.ArrayInterface]]
-deps = ["Adapt", "LinearAlgebra", "Requires", "SparseArrays", "SuiteSparse"]
-git-tree-sha1 = "f83ec24f76d4c8f525099b2ac475fc098138ec31"
-uuid = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
-version = "7.4.11"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
@@ -293,12 +101,6 @@ git-tree-sha1 = "4b859a208b2397a7a623a03449e4636bdb17bcf2"
 uuid = "83423d85-b0ee-5818-9007-b63ccbeb887a"
 version = "1.16.1+1"
 
-[[deps.Calculus]]
-deps = ["LinearAlgebra"]
-git-tree-sha1 = "f641eb0a4f00c343bbc32346e1217b86f3ce9dad"
-uuid = "49dc2e85-a5d0-5ad3-a950-438e2897f1b9"
-version = "0.5.1"
-
 [[deps.ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
 git-tree-sha1 = "e30f2f4e20f7f186dc36529910beaedc60cfa644"
@@ -319,9 +121,9 @@ version = "0.7.2"
 
 [[deps.ColorSchemes]]
 deps = ["ColorTypes", "ColorVectorSpace", "Colors", "FixedPointNumbers", "PrecompileTools", "Random"]
-git-tree-sha1 = "d9a8f86737b665e15a9641ecbac64deef9ce6724"
+git-tree-sha1 = "67c1f244b991cad9b0aa4b7540fb758c2488b129"
 uuid = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
-version = "3.23.0"
+version = "3.24.0"
 
 [[deps.ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
@@ -341,17 +143,11 @@ git-tree-sha1 = "fc08e5930ee9a4e03f84bfb5211cb54e7769758a"
 uuid = "5ae59095-9a9b-59fe-a467-6f913c188581"
 version = "0.12.10"
 
-[[deps.CommonSubexpressions]]
-deps = ["MacroTools", "Test"]
-git-tree-sha1 = "7b8a93dba8af7e3b42fecabf646260105ac373f7"
-uuid = "bbf7d656-a473-5ed7-a52c-81e309532950"
-version = "0.3.0"
-
 [[deps.Compat]]
 deps = ["Dates", "LinearAlgebra", "UUIDs"]
-git-tree-sha1 = "e460f044ca8b99be31d35fe54fc33a5c33dd8ed7"
+git-tree-sha1 = "8a62af3e248a8c4bad6b32cbbe663ae02275e32c"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "4.9.0"
+version = "4.10.0"
 
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -375,12 +171,6 @@ git-tree-sha1 = "d05d9e7b7aedff4e5b51a029dced05cfb6125781"
 uuid = "d38c429a-6771-53c6-b99e-75d170b6e991"
 version = "0.6.2"
 
-[[deps.DSP]]
-deps = ["Compat", "FFTW", "IterTools", "LinearAlgebra", "Polynomials", "Random", "Reexport", "SpecialFunctions", "Statistics"]
-git-tree-sha1 = "da8b06f89fce9996443010ef92572b193f8dca1f"
-uuid = "717857b8-e6f2-59f4-9121-6e50c889abd2"
-version = "0.7.8"
-
 [[deps.DataAPI]]
 git-tree-sha1 = "8da84edb865b0b5b0100c0666a9bc9a0b71c553c"
 uuid = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
@@ -400,34 +190,6 @@ uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 deps = ["Mmap"]
 uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 
-[[deps.DensityInterface]]
-deps = ["InverseFunctions", "Test"]
-git-tree-sha1 = "80c3e8639e3353e5d2912fb3a1916b8455e2494b"
-uuid = "b429d917-457f-4dbc-8f4c-0cc954292b1d"
-version = "0.4.0"
-
-[[deps.DiffResults]]
-deps = ["StaticArraysCore"]
-git-tree-sha1 = "782dd5f4561f5d267313f23853baaaa4c52ea621"
-uuid = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
-version = "1.1.0"
-
-[[deps.DiffRules]]
-deps = ["IrrationalConstants", "LogExpFunctions", "NaNMath", "Random", "SpecialFunctions"]
-git-tree-sha1 = "23163d55f885173722d1e4cf0f6110cdbaf7e272"
-uuid = "b552c78f-8df3-52c6-915a-8e097449b14b"
-version = "1.15.1"
-
-[[deps.Distributed]]
-deps = ["Random", "Serialization", "Sockets"]
-uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
-
-[[deps.Distributions]]
-deps = ["ChainRulesCore", "DensityInterface", "FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SpecialFunctions", "Statistics", "StatsAPI", "StatsBase", "StatsFuns", "Test"]
-git-tree-sha1 = "938fe2981db009f531b6332e31c58e9584a2f9bd"
-uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
-version = "0.25.100"
-
 [[deps.DocStringExtensions]]
 deps = ["LibGit2"]
 git-tree-sha1 = "2fb1e02f2b635d0845df5d7c167fec4dd739b00d"
@@ -438,12 +200,6 @@ version = "0.9.3"
 deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 version = "1.6.0"
-
-[[deps.DualNumbers]]
-deps = ["Calculus", "NaNMath", "SpecialFunctions"]
-git-tree-sha1 = "5837a837389fccf076445fce071c8ddaea35a566"
-uuid = "fa6b7ba4-c1ee-5f82-b5fc-ecf0adba8f74"
-version = "0.6.8"
 
 [[deps.EpollShim_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
@@ -475,43 +231,8 @@ git-tree-sha1 = "74faea50c1d007c85837327f6775bea60b5492dd"
 uuid = "b22a6f82-2f65-5046-a5b2-351ab43fb4e5"
 version = "4.4.2+2"
 
-[[deps.FFTW]]
-deps = ["AbstractFFTs", "FFTW_jll", "LinearAlgebra", "MKL_jll", "Preferences", "Reexport"]
-git-tree-sha1 = "b4fbdd20c889804969571cc589900803edda16b7"
-uuid = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
-version = "1.7.1"
-
-[[deps.FFTW_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "c6033cc3892d0ef5bb9cd29b7f2f0331ea5184ea"
-uuid = "f5851436-0d7a-5f13-b9de-f02708fd171a"
-version = "3.3.10+0"
-
-[[deps.FileIO]]
-deps = ["Pkg", "Requires", "UUIDs"]
-git-tree-sha1 = "299dc33549f68299137e51e6d49a13b5b1da9673"
-uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
-version = "1.16.1"
-
 [[deps.FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
-
-[[deps.FillArrays]]
-deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
-git-tree-sha1 = "a20eaa3ad64254c61eeb5f230d9306e937405434"
-uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
-version = "1.6.1"
-
-[[deps.FindPeaks1D]]
-git-tree-sha1 = "103c0a3502725e3b2e49afe0035bd68834655785"
-uuid = "d8961e24-b28b-4efb-8e50-1c680b9a7431"
-version = "0.1.8"
-
-[[deps.FiniteDiff]]
-deps = ["ArrayInterface", "LinearAlgebra", "Requires", "Setfield", "SparseArrays", "StaticArrays"]
-git-tree-sha1 = "c6e4a1fbe73b31a3dea94b1da449503b8830c306"
-uuid = "6a86dc24-6348-571c-b903-95158fe2bd41"
-version = "2.21.1"
 
 [[deps.FixedPointNumbers]]
 deps = ["Statistics"]
@@ -531,12 +252,6 @@ git-tree-sha1 = "8339d61043228fdd3eb658d86c926cb282ae72a8"
 uuid = "59287772-0a20-5a39-b81b-1366585eb4c0"
 version = "0.4.2"
 
-[[deps.ForwardDiff]]
-deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "LinearAlgebra", "LogExpFunctions", "NaNMath", "Preferences", "Printf", "Random", "SpecialFunctions", "StaticArrays"]
-git-tree-sha1 = "cf0fe81336da9fb90944683b8c41984b08793dad"
-uuid = "f6369f11-7733-5829-9624-2563aa707210"
-version = "0.10.36"
-
 [[deps.FreeType2_jll]]
 deps = ["Artifacts", "Bzip2_jll", "JLLWrappers", "Libdl", "Zlib_jll"]
 git-tree-sha1 = "d8db6a5a2fe1381c1ea4ef2cab7c69c2de7f9ea0"
@@ -549,10 +264,6 @@ git-tree-sha1 = "aa31987c2ba8704e23c6c8ba8a4f769d5d7e4f91"
 uuid = "559328eb-81f9-559d-9380-de523a88c83c"
 version = "1.0.10+0"
 
-[[deps.Future]]
-deps = ["Random"]
-uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
-
 [[deps.GLFW_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Pkg", "Xorg_libXcursor_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll"]
 git-tree-sha1 = "d972031d28c8c8d9d7b41a536ad7bb0c2579caca"
@@ -561,15 +272,15 @@ version = "3.3.8+0"
 
 [[deps.GR]]
 deps = ["Artifacts", "Base64", "DelimitedFiles", "Downloads", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Pkg", "Preferences", "Printf", "Random", "Serialization", "Sockets", "TOML", "Tar", "Test", "UUIDs", "p7zip_jll"]
-git-tree-sha1 = "d73afa4a2bb9de56077242d98cf763074ab9a970"
+git-tree-sha1 = "27442171f28c952804dede8ff72828a96f2bfc1f"
 uuid = "28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71"
-version = "0.72.9"
+version = "0.72.10"
 
 [[deps.GR_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Cairo_jll", "FFMPEG_jll", "Fontconfig_jll", "FreeType2_jll", "GLFW_jll", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pixman_jll", "Qt6Base_jll", "Zlib_jll", "libpng_jll"]
-git-tree-sha1 = "1596bab77f4f073a14c62424283e7ebff3072eca"
+git-tree-sha1 = "025d171a2847f616becc0f84c8dc62fe18f0f6dd"
 uuid = "d2c73de3-f751-5644-a686-071e5b155ba9"
-version = "0.72.9+1"
+version = "0.72.10+0"
 
 [[deps.Gettext_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Libiconv_jll", "Pkg", "XML2_jll"]
@@ -596,27 +307,15 @@ version = "1.0.2"
 
 [[deps.HTTP]]
 deps = ["Base64", "CodecZlib", "ConcurrentUtilities", "Dates", "ExceptionUnwrapping", "Logging", "LoggingExtras", "MbedTLS", "NetworkOptions", "OpenSSL", "Random", "SimpleBufferStream", "Sockets", "URIs", "UUIDs"]
-git-tree-sha1 = "19e974eced1768fb46fd6020171f2cec06b1edb5"
+git-tree-sha1 = "5eab648309e2e060198b45820af1a37182de3cce"
 uuid = "cd3eb016-35fb-5094-929b-558a96fad6f3"
-version = "1.9.15"
+version = "1.10.0"
 
 [[deps.HarfBuzz_jll]]
 deps = ["Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "Graphite2_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Pkg"]
 git-tree-sha1 = "129acf094d168394e80ee1dc4bc06ec835e510a3"
 uuid = "2e76f6c2-a576-52d4-95c1-20adfe4de566"
 version = "2.8.1+1"
-
-[[deps.HypergeometricFunctions]]
-deps = ["DualNumbers", "LinearAlgebra", "OpenLibm_jll", "SpecialFunctions"]
-git-tree-sha1 = "f218fe3736ddf977e0e772bc9a586b2383da2685"
-uuid = "34004b35-14d8-5ef3-9330-4cdb6864b03a"
-version = "0.3.23"
-
-[[deps.IntelOpenMP_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "ad37c091f7d7daf900963171600d7c1c5c3ede32"
-uuid = "1d5cc7b8-4909-519e-a0f8-d0f5ad9712d0"
-version = "2023.2.0+0"
 
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
@@ -632,11 +331,6 @@ version = "0.1.12"
 git-tree-sha1 = "630b497eafcc20001bba38a4651b327dcfc491d2"
 uuid = "92d709cd-6900-40b7-9082-c6be49f344b6"
 version = "0.2.2"
-
-[[deps.IterTools]]
-git-tree-sha1 = "4ced6667f9974fc5c5943fa5e2ef1ca43ea9e450"
-uuid = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
-version = "1.8.0"
 
 [[deps.JLFzf]]
 deps = ["Pipe", "REPL", "Random", "fzf_jll"]
@@ -696,10 +390,6 @@ deps = ["Formatting", "InteractiveUtils", "LaTeXStrings", "MacroTools", "Markdow
 git-tree-sha1 = "f428ae552340899a935973270b8d98e5a31c49fe"
 uuid = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
 version = "0.16.1"
-
-[[deps.LazyArtifacts]]
-deps = ["Artifacts", "Pkg"]
-uuid = "4af54fe1-eca0-43a8-85a7-787d91b784e3"
 
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
@@ -771,12 +461,6 @@ git-tree-sha1 = "7f3efec06033682db852f8b3bc3c1d2b0a0ab066"
 uuid = "38a345b3-de98-5d2b-a5d3-14cd9215e700"
 version = "2.36.0+0"
 
-[[deps.LineSearches]]
-deps = ["LinearAlgebra", "NLSolversBase", "NaNMath", "Parameters", "Printf"]
-git-tree-sha1 = "7bbea35cec17305fc70a0e5b4641477dc0789d9d"
-uuid = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
-version = "7.2.0"
-
 [[deps.LinearAlgebra]]
 deps = ["Libdl", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -796,23 +480,11 @@ git-tree-sha1 = "0d097476b6c381ab7906460ef1ef1638fbce1d91"
 uuid = "e6f89c97-d47a-5376-807f-9c37f3926c36"
 version = "1.0.2"
 
-[[deps.MKL_jll]]
-deps = ["Artifacts", "IntelOpenMP_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "Pkg"]
-git-tree-sha1 = "eb006abbd7041c28e0d16260e50a24f8f9104913"
-uuid = "856f044c-d86e-5d09-b602-aeab76dc8ba7"
-version = "2023.2.0+0"
-
 [[deps.MacroTools]]
 deps = ["Markdown", "Random"]
 git-tree-sha1 = "9ee1618cbf5240e6d4e0371d6f24065083f60c48"
 uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 version = "0.5.11"
-
-[[deps.MakieCore]]
-deps = ["Observables"]
-git-tree-sha1 = "1efb1166dd9398f2ccf6d728f896658c9c84733e"
-uuid = "20f20a25-4f0e-4fdf-b5d1-57303727442b"
-version = "0.6.6"
 
 [[deps.Markdown]]
 deps = ["Base64"]
@@ -834,12 +506,6 @@ git-tree-sha1 = "c13304c81eec1ed3af7fc20e75fb6b26092a1102"
 uuid = "442fdcdd-2543-5da2-b0f3-8c86c306513e"
 version = "0.3.2"
 
-[[deps.MetaArrays]]
-deps = ["Requires"]
-git-tree-sha1 = "6647f7d45a9153162d6561957405c12088caf537"
-uuid = "36b8f3f0-b776-11e8-061f-1f20094e1fc8"
-version = "0.2.10"
-
 [[deps.Missings]]
 deps = ["DataAPI"]
 git-tree-sha1 = "f66bdc5de519e8f8ae43bdc598782d35a25b1272"
@@ -853,18 +519,6 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
 version = "2022.2.1"
 
-[[deps.MutableArithmetics]]
-deps = ["LinearAlgebra", "SparseArrays", "Test"]
-git-tree-sha1 = "a7b647ce8f4fefbcaf7de28fa208c812e21dc18f"
-uuid = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
-version = "1.3.2"
-
-[[deps.NLSolversBase]]
-deps = ["DiffResults", "Distributed", "FiniteDiff", "ForwardDiff"]
-git-tree-sha1 = "a0b464d183da839699f4c79e7606d9d186ec172c"
-uuid = "d41bc354-129a-5804-8e4c-c37616107c6c"
-version = "7.8.3"
-
 [[deps.NaNMath]]
 deps = ["OpenLibm_jll"]
 git-tree-sha1 = "0877504529a3e5c3343c6f8b4c0381e57e4387e4"
@@ -874,17 +528,6 @@ version = "1.0.2"
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
 version = "1.2.0"
-
-[[deps.Observables]]
-git-tree-sha1 = "6862738f9796b3edc1c09d0890afce4eca9e7e93"
-uuid = "510215fc-4207-5dde-b226-833fc4488ee2"
-version = "0.5.4"
-
-[[deps.OffsetArrays]]
-deps = ["Adapt"]
-git-tree-sha1 = "2ac17d29c523ce1cd38e27785a7d23024853a4bb"
-uuid = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
-version = "1.12.10"
 
 [[deps.Ogg_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -910,21 +553,9 @@ version = "1.4.1"
 
 [[deps.OpenSSL_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "bbb5c2115d63c2f1451cb70e5ef75e8fe4707019"
+git-tree-sha1 = "a12e56c72edee3ce6b96667745e6cbbe5498f200"
 uuid = "458c3c95-2e84-50aa-8efc-19380b2a3a95"
-version = "1.1.22+0"
-
-[[deps.OpenSpecFun_jll]]
-deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "13652491f6856acfd2db29360e1bbcd4565d04f1"
-uuid = "efe28fd5-8261-553b-a9e1-b2916fc3738e"
-version = "0.5.5+0"
-
-[[deps.Optim]]
-deps = ["Compat", "FillArrays", "ForwardDiff", "LineSearches", "LinearAlgebra", "NLSolversBase", "NaNMath", "Parameters", "PositiveFactorizations", "Printf", "SparseArrays", "StatsBase"]
-git-tree-sha1 = "963b004d15216f8129f6c0f7d187efa136570be0"
-uuid = "429524aa-4258-5aef-a3af-852621145aeb"
-version = "1.7.7"
+version = "1.1.23+0"
 
 [[deps.Opus_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -942,35 +573,11 @@ deps = ["Artifacts", "Libdl"]
 uuid = "efcefdf7-47ab-520b-bdef-62a2eaa19f15"
 version = "10.40.0+0"
 
-[[deps.PDMats]]
-deps = ["LinearAlgebra", "SparseArrays", "SuiteSparse"]
-git-tree-sha1 = "67eae2738d63117a196f497d7db789821bce61d1"
-uuid = "90014a1f-27ba-587c-ab20-58faa44d9150"
-version = "0.11.17"
-
-[[deps.PaddedViews]]
-deps = ["OffsetArrays"]
-git-tree-sha1 = "0fac6313486baae819364c52b4f483450a9d793f"
-uuid = "5432bcbf-9aad-5242-b902-cca2824c8663"
-version = "0.5.12"
-
-[[deps.Parameters]]
-deps = ["OrderedCollections", "UnPack"]
-git-tree-sha1 = "34c0e9ad262e5f7fc75b10a9952ca7692cfc5fbe"
-uuid = "d96e819e-fc66-5662-9728-84c9c7592b0a"
-version = "0.12.3"
-
 [[deps.Parsers]]
 deps = ["Dates", "PrecompileTools", "UUIDs"]
 git-tree-sha1 = "716e24b21538abc91f6205fd1d8363f39b442851"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
 version = "2.7.2"
-
-[[deps.Peaks]]
-deps = ["Compat", "RecipesBase"]
-git-tree-sha1 = "1627365757c8b87ad01c2c13e55a5120cbe5b548"
-uuid = "18e31ff7-3703-566c-8e60-38913d67486b"
-version = "0.4.4"
 
 [[deps.Pipe]]
 git-tree-sha1 = "6842804e7867b115ca9de748a0cf6b364523c16d"
@@ -1006,18 +613,6 @@ git-tree-sha1 = "ccee59c6e48e6f2edf8a5b64dc817b6729f99eb5"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 version = "1.39.0"
 
-[[deps.Polynomials]]
-deps = ["ChainRulesCore", "LinearAlgebra", "MakieCore", "MutableArithmetics", "RecipesBase"]
-git-tree-sha1 = "3aa2bb4982e575acd7583f01531f241af077b163"
-uuid = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
-version = "3.2.13"
-
-[[deps.PositiveFactorizations]]
-deps = ["LinearAlgebra"]
-git-tree-sha1 = "17275485f373e6673f7e7f97051f703ed5b15b20"
-uuid = "85a6dd25-e78a-55b7-8502-1745935b8125"
-version = "0.2.4"
-
 [[deps.PrecompileTools]]
 deps = ["Preferences"]
 git-tree-sha1 = "03b4c25b43cb84cee5c90aa9b5ea0a78fd848d2f"
@@ -1026,25 +621,19 @@ version = "1.2.0"
 
 [[deps.Preferences]]
 deps = ["TOML"]
-git-tree-sha1 = "7eb1686b4f04b82f96ed7a4ea5890a4f0c7a09f1"
+git-tree-sha1 = "00805cd429dcb4870060ff49ef443486c262e38e"
 uuid = "21216c6a-2e73-6563-6e65-726566657250"
-version = "1.4.0"
+version = "1.4.1"
 
 [[deps.Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [[deps.Qt6Base_jll]]
-deps = ["Artifacts", "CompilerSupportLibraries_jll", "Fontconfig_jll", "Glib_jll", "JLLWrappers", "Libdl", "Libglvnd_jll", "OpenSSL_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Xorg_libxcb_jll", "Xorg_xcb_util_image_jll", "Xorg_xcb_util_keysyms_jll", "Xorg_xcb_util_renderutil_jll", "Xorg_xcb_util_wm_jll", "Zlib_jll", "xkbcommon_jll"]
-git-tree-sha1 = "364898e8f13f7eaaceec55fd3d08680498c0aa6e"
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "Fontconfig_jll", "Glib_jll", "JLLWrappers", "Libdl", "Libglvnd_jll", "OpenSSL_jll", "Vulkan_Loader_jll", "Xorg_libSM_jll", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Xorg_libxcb_jll", "Xorg_xcb_util_cursor_jll", "Xorg_xcb_util_image_jll", "Xorg_xcb_util_keysyms_jll", "Xorg_xcb_util_renderutil_jll", "Xorg_xcb_util_wm_jll", "Zlib_jll", "libinput_jll", "xkbcommon_jll"]
+git-tree-sha1 = "7c29f0e8c575428bd84dc3c72ece5178caa67336"
 uuid = "c0090381-4147-56d7-9ebc-da0b1113ec56"
-version = "6.4.2+3"
-
-[[deps.QuadGK]]
-deps = ["DataStructures", "LinearAlgebra"]
-git-tree-sha1 = "6ec7ac8412e83d57e313393220879ede1740f9ee"
-uuid = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
-version = "2.8.2"
+version = "6.5.2+2"
 
 [[deps.REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
@@ -1083,18 +672,6 @@ git-tree-sha1 = "838a3a4188e2ded87a4f9f184b4b0d78a1e91cb7"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
 version = "1.3.0"
 
-[[deps.Rmath]]
-deps = ["Random", "Rmath_jll"]
-git-tree-sha1 = "f65dcb5fa46aee0cf9ed6274ccbd597adc49aa7b"
-uuid = "79098fc4-a85e-5d69-aa6a-4863f24498fa"
-version = "0.7.1"
-
-[[deps.Rmath_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "6ed52fdd3382cf21947b15e8870ac0ddbff736da"
-uuid = "f50d1b31-88e8-58de-be2c-1cc44531875f"
-version = "0.4.0+0"
-
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 version = "0.7.0"
@@ -1108,29 +685,11 @@ version = "1.2.0"
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 
-[[deps.Setfield]]
-deps = ["ConstructionBase", "Future", "MacroTools", "StaticArraysCore"]
-git-tree-sha1 = "e2cc6d8c88613c05e1defb55170bf5ff211fbeac"
-uuid = "efcf1570-3423-57d1-acb7-fd33fddbac46"
-version = "1.1.1"
-
 [[deps.Showoff]]
 deps = ["Dates", "Grisu"]
 git-tree-sha1 = "91eddf657aca81df9ae6ceb20b959ae5653ad1de"
 uuid = "992d4aef-0814-514b-bc4d-f2e9a6c4116f"
 version = "1.0.3"
-
-[[deps.SignalAnalysis]]
-deps = ["DSP", "Distributions", "DocStringExtensions", "FFTW", "LinearAlgebra", "MetaArrays", "Optim", "PaddedViews", "Peaks", "Random", "Requires", "SignalBase", "Statistics", "WAV"]
-git-tree-sha1 = "d57f40bf531ae2b82549aae0cb20e84331d40333"
-uuid = "df1fea92-c066-49dd-8b36-eace3378ea47"
-version = "0.6.0"
-
-[[deps.SignalBase]]
-deps = ["Unitful"]
-git-tree-sha1 = "14cb05cba5cc89d15e6098e7bb41dcef2606a10a"
-uuid = "00c44e92-20f5-44bc-8f45-a1dcef76ba38"
-version = "0.1.2"
 
 [[deps.SimpleBufferStream]]
 git-tree-sha1 = "874e8867b33a00e784c8a7e4b60afe9e037b74e1"
@@ -1150,23 +709,6 @@ version = "1.1.1"
 deps = ["LinearAlgebra", "Random"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
-[[deps.SpecialFunctions]]
-deps = ["ChainRulesCore", "IrrationalConstants", "LogExpFunctions", "OpenLibm_jll", "OpenSpecFun_jll"]
-git-tree-sha1 = "e2cfc4012a19088254b3950b85c3c1d8882d864d"
-uuid = "276daf66-3868-5448-9aa4-cd146d93841b"
-version = "2.3.1"
-
-[[deps.StaticArrays]]
-deps = ["LinearAlgebra", "Random", "StaticArraysCore", "Statistics"]
-git-tree-sha1 = "51621cca8651d9e334a659443a74ce50a3b6dfab"
-uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.6.3"
-
-[[deps.StaticArraysCore]]
-git-tree-sha1 = "36b3d696ce6366023a0ea192b4cd442268995a0d"
-uuid = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
-version = "1.4.2"
-
 [[deps.Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
@@ -1179,19 +721,9 @@ version = "1.7.0"
 
 [[deps.StatsBase]]
 deps = ["DataAPI", "DataStructures", "LinearAlgebra", "LogExpFunctions", "Missings", "Printf", "Random", "SortingAlgorithms", "SparseArrays", "Statistics", "StatsAPI"]
-git-tree-sha1 = "75ebe04c5bed70b91614d684259b661c9e6274a4"
+git-tree-sha1 = "1d77abd07f617c4868c33d4f5b9e1dbb2643c9cf"
 uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
-version = "0.34.0"
-
-[[deps.StatsFuns]]
-deps = ["ChainRulesCore", "HypergeometricFunctions", "InverseFunctions", "IrrationalConstants", "LogExpFunctions", "Reexport", "Rmath", "SpecialFunctions"]
-git-tree-sha1 = "f625d686d5a88bcd2b15cd81f18f98186fdc0c9a"
-uuid = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
-version = "1.3.0"
-
-[[deps.SuiteSparse]]
-deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]
-uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
+version = "0.34.2"
 
 [[deps.TOML]]
 deps = ["Dates"]
@@ -1228,11 +760,6 @@ version = "1.5.0"
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
-[[deps.UnPack]]
-git-tree-sha1 = "387c1f73762231e86e0c9c5443ce3b4a0a9a0c2b"
-uuid = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
-version = "1.0.2"
-
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
@@ -1259,11 +786,11 @@ git-tree-sha1 = "ca0969166a028236229f63514992fc073799bb78"
 uuid = "41fe7b60-77ed-43a1-b4f0-825fd5a5650d"
 version = "0.2.0"
 
-[[deps.WAV]]
-deps = ["Base64", "FileIO", "Libdl", "Logging"]
-git-tree-sha1 = "7e7e1b4686995aaf4ecaaf52f6cd824fa6bd6aa5"
-uuid = "8149f6b0-98f6-5db9-b78f-408fbbb8ef88"
-version = "1.2.0"
+[[deps.Vulkan_Loader_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Wayland_jll", "Xorg_libX11_jll", "Xorg_libXrandr_jll", "xkbcommon_jll"]
+git-tree-sha1 = "2f0486047a07670caad3a81a075d2e518acc5c59"
+uuid = "a44049a8-05dd-5a78-86c9-5fde0876e88c"
+version = "1.3.243+0"
 
 [[deps.Wayland_jll]]
 deps = ["Artifacts", "EpollShim_jll", "Expat_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Pkg", "XML2_jll"]
@@ -1279,9 +806,9 @@ version = "1.25.0+0"
 
 [[deps.XML2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libiconv_jll", "Zlib_jll"]
-git-tree-sha1 = "04a51d15436a572301b5abbb9d099713327e9fc4"
+git-tree-sha1 = "24b81b59bd35b3c42ab84fa589086e19be919916"
 uuid = "02c8fc9c-b97f-50b9-bbe4-9be30ff0a78a"
-version = "2.10.4+0"
+version = "2.11.5+0"
 
 [[deps.XSLT_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libgcrypt_jll", "Libgpg_error_jll", "Libiconv_jll", "Pkg", "XML2_jll", "Zlib_jll"]
@@ -1294,6 +821,18 @@ deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "cf2c7de82431ca6f39250d2fc4aacd0daa1675c0"
 uuid = "ffd25f8a-64ca-5728-b0f7-c24cf3aae800"
 version = "5.4.4+0"
+
+[[deps.Xorg_libICE_jll]]
+deps = ["Libdl", "Pkg"]
+git-tree-sha1 = "e5becd4411063bdcac16be8b66fc2f9f6f1e8fe5"
+uuid = "f67eecfb-183a-506d-b269-f58e52b52d7c"
+version = "1.0.10+1"
+
+[[deps.Xorg_libSM_jll]]
+deps = ["Libdl", "Pkg", "Xorg_libICE_jll"]
+git-tree-sha1 = "4a9d9e4c180e1e8119b5ffc224a7b59d3a7f7e18"
+uuid = "c834827a-8449-5923-a945-d239c165b7dd"
+version = "1.2.3+0"
 
 [[deps.Xorg_libX11_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libxcb_jll", "Xorg_xtrans_jll"]
@@ -1373,6 +912,12 @@ git-tree-sha1 = "730eeca102434283c50ccf7d1ecdadf521a765a4"
 uuid = "cc61e674-0454-545c-8b26-ed2c68acab7a"
 version = "1.1.2+0"
 
+[[deps.Xorg_xcb_util_cursor_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_xcb_util_image_jll", "Xorg_xcb_util_jll", "Xorg_xcb_util_renderutil_jll"]
+git-tree-sha1 = "04341cb870f29dcd5e39055f895c39d016e18ccd"
+uuid = "e920d4aa-a673-5f3a-b3d7-f755a4d47c43"
+version = "0.1.4+0"
+
 [[deps.Xorg_xcb_util_image_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "Xorg_xcb_util_jll"]
 git-tree-sha1 = "0fab0a40349ba1cba2c1da699243396ff8e94b97"
@@ -1432,11 +977,23 @@ git-tree-sha1 = "49ce682769cd5de6c72dcf1b94ed7790cd08974c"
 uuid = "3161d3a3-bdf6-5164-811a-617609db77b4"
 version = "1.5.5+0"
 
+[[deps.eudev_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "gperf_jll"]
+git-tree-sha1 = "431b678a28ebb559d224c0b6b6d01afce87c51ba"
+uuid = "35ca27e7-8b34-5b7f-bca9-bdc33f59eb06"
+version = "3.2.9+0"
+
 [[deps.fzf_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "868e669ccb12ba16eaf50cb2957ee2ff61261c56"
 uuid = "214eeab7-80f7-51ab-84ad-2988db7cef09"
 version = "0.29.0+0"
+
+[[deps.gperf_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "3516a5630f741c9eecb3720b1ec9d8edc3ecc033"
+uuid = "1a1c6b14-54f6-533d-8383-74cd7377aa70"
+version = "3.1.1+0"
 
 [[deps.libaom_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1455,11 +1012,23 @@ deps = ["Artifacts", "Libdl", "OpenBLAS_jll"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
 version = "5.1.1+0"
 
+[[deps.libevdev_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "141fe65dc3efabb0b1d5ba74e91f6ad26f84cc22"
+uuid = "2db6ffa8-e38f-5e21-84af-90c45d0032cc"
+version = "1.11.0+0"
+
 [[deps.libfdk_aac_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "daacc84a041563f965be61859a36e17c4e4fcd55"
 uuid = "f638f0a6-7fb0-5443-88ba-1cc74229b280"
 version = "2.0.2+0"
+
+[[deps.libinput_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "eudev_jll", "libevdev_jll", "mtdev_jll"]
+git-tree-sha1 = "ad50e5b90f222cfe78aa3d5183a20a12de1322ce"
+uuid = "36db933b-70db-51c0-b978-0f229ee0e533"
+version = "1.18.0+0"
 
 [[deps.libpng_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "Zlib_jll"]
@@ -1472,6 +1041,12 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Ogg_jll", "Pkg"]
 git-tree-sha1 = "b910cb81ef3fe6e78bf6acee440bda86fd6ae00c"
 uuid = "f27f6e37-5d2b-51aa-960f-b287f2bc3b7a"
 version = "1.3.7+1"
+
+[[deps.mtdev_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "814e154bdb7be91d78b6802843f76b6ece642f11"
+uuid = "009596ad-96f7-51b1-9f1b-5ce2d5e8a71e"
+version = "1.1.6+0"
 
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -1503,45 +1078,14 @@ version = "1.4.1+1"
 """
 
 # ╔═╡ Cell order:
-# ╟─2b5f75e0-511a-11ee-197f-35f50e524ee0
-# ╟─3c38a6b0-19cc-41ee-af78-33028e5ca936
-# ╠═cdc95ed2-e160-435d-9873-d5eddeecfbbe
-# ╠═67efa7a1-1dee-4d52-b483-8a12323f3e2d
-# ╠═3121abaa-d3dd-4a58-9672-098b10d52043
-# ╠═855b00d0-d694-4e74-a8fd-478095b5763c
-# ╠═d5a0871a-68cc-4396-a778-d993dd495bda
-# ╟─d09cf558-e330-4b1f-97ac-b6395a39072d
-# ╟─3e374048-cec2-45e6-8f17-6c509a6f4003
-# ╠═ad57997c-921b-4c95-89ad-e11d7b0845e2
-# ╠═9078eb1b-76f1-465f-a6da-4df77267de2e
-# ╟─a41abcae-08bc-4fc6-8e0d-09f1139dfe8e
-# ╟─74f932f7-be67-475b-a4ba-761b252df18d
-# ╟─52ec9a39-f77c-4ca2-83c6-45154fbfa963
-# ╟─ee9439e5-7e18-4631-bfb6-5b33859cc6bc
-# ╟─c4d74563-af78-48ec-8d94-5461024e86fc
-# ╠═a28e880a-5a6e-44e1-b556-2c47d9cfb695
-# ╠═19cb2701-bfe8-4906-b00f-0d3247c27b8e
-# ╠═7f2a0f9e-ef0f-4deb-b349-47911dc31867
-# ╟─fce8672e-d3da-4da7-b16b-fdfaace4cc53
-# ╟─f5e4902a-cf4a-4fb1-8b00-304e05ccee4a
-# ╟─dd655fc7-520e-4523-a085-afe91dc0cc58
-# ╟─72c3d091-d24f-4030-85d3-0e1274f3203d
-# ╟─96704c1f-51ae-40bc-bec9-c6916efc7cb4
-# ╠═644f8410-ee1e-4a0c-a8f7-2bb54fccb8ef
-# ╠═bbfdb4b9-3c30-4897-86e4-b6a314f0a2b5
-# ╟─f845c408-4f65-47c1-98f3-d6390b9f5deb
-# ╟─90aff9ce-9fe2-4531-8226-39fed4292a27
-# ╠═34275937-61cd-4d4d-aeb9-6ca9366835c7
-# ╠═a2481448-f403-41ed-8aed-802be5cf5c17
-# ╠═4309762f-4d09-4e7c-b932-c80ed65face8
-# ╠═e9558f80-e22c-4ab0-aebc-6f6b255e38a6
-# ╟─fdd6c199-30c6-4211-899f-116073c299df
-# ╠═2f0debe9-18c1-415d-b7f1-44891d45d38a
-# ╠═f80ceb46-ce30-4436-96d4-1eaf5b008cfd
-# ╟─f08797de-1785-426b-9ca3-1f283bf4336a
-# ╟─f603e099-e18d-436e-9873-7082e219cb34
-# ╠═a1bb7a8d-8c69-4002-b93b-98fa839d4a5c
-# ╟─4ad24ac0-4e82-4111-9206-e74c2c0d8bc5
-# ╟─b1df0466-9d84-4ec4-a2b9-9ea62df7c2bc
+# ╟─56fa6e90-6168-11ee-221b-a70ef5c757dd
+# ╟─8380a7bf-1ecc-44c7-8516-31d328305b2d
+# ╠═4a73c8f5-75ca-4865-a709-0f84b0a8bc44
+# ╠═b061dfdd-520e-4cf3-a87a-bfaf7ba320a6
+# ╟─9b14f72f-6f83-4329-98cc-ee218a0995bc
+# ╟─bd8bf735-d628-40a4-9eed-0be94a14aa14
+# ╠═5a5e2bb7-eb61-41a1-8090-ba7e9b65ccae
+# ╠═e8367c6d-5c21-49ff-8985-c097d88d2bff
+# ╠═5a174d3d-d475-4dd4-a56b-06a0df46ed04
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
