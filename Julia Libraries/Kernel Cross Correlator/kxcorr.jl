@@ -3,28 +3,41 @@
 =#
 
 # --Using statements
-    using CUDA
-    using CUDA.CUFFT
+    using DSP
+    using StatsBase
+    using AbstractFFTs
+    
 
 # --Function Definition
-    function kxcorr(data, sample)
+function kxcorr(data::Vector, sample)
 
-        # --Parameters for calculations
-            sigma = 0.3;
-            lambda = 0.0015;
+	# --Test for correct type of vector
+		if ndims(data) != 1
+			data_vec = vec(data);
+		end
 
-        # --Convert data to CuArray types in freq domain
-            f_data = fft(CuArray(data));
-            f_sample = fft(CuArray(sample));
+	# --Zero Pad data to make the same length
+		if length(sample) < length(data)
+			diff = length(data) - length(sample);
+			pad = zeros(diff);
+			ref_sig = [sample; pad];
+		end
 
-        # --Call on train function
-            f_correlator = train(f_sample, lambda, sigma);
+	# --parameters
+		lambda = 0.001;
+		sigma = 0.2;
 
-        # --Kernel of data (calls kernel_gauss)
-            f_kernel = kernel_gauss(f_data, f_sample, sigma);   # Take the kernel transform of the data
-            output = Array(ifft(f_correlator.*f_kernel));       # Take out of frequency domain, and then transfer back to CPU
-            output = abs.(output);                              # Remove imaginary part
-            response = max(output);
+	# --Setup
+			data_fft = fft(data);
+			ref_sig_fft = fft(ref_sig);
 
-        return response, output
-    end
+	# --Train
+		h_hat = train(data, ref_sig, ref_sig_fft, lambda, sigma);
+	
+	# --Compute output
+		kernel_fft = fft(gauss_kernel(data_fft, ref_sig_fft, sigma));
+		output = abs.(ifft(h_hat .* kernel_fft));
+		corr_output = output .- mean(output);
+
+	return corr_output
+end

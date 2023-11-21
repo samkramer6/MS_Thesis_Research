@@ -12,7 +12,7 @@
 using StatsBase
 
 # --Function Definition
-function time_domain_finder(filtered_data, fs::Int64, FM_chirp, CFFM_chirp, weight)
+function time_domain_finder(filtered_data, fs, FM_chirp, CFFM_chirp, weight)
 
 # --Cross correlate data sets
     lags = 0:length(filtered_data) - 1;

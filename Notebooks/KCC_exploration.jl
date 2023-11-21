@@ -130,6 +130,10 @@ This part of the notebook will be on the comparison of the speeds in the CUDA fu
 # --New Signal Length(length = 100,000)
 	signal_2 = vec([signal; signal]);
 
+# ╔═╡ 9c189ca5-2854-42d1-802e-422943d7fa2e
+# --Create signal (length = 120,000)
+	signal_120 = vec(rand(Float64, 120000));
+
 # ╔═╡ 94817965-7a17-4634-a86b-f3841aa1ace1
 # --Creating signal length 150,000
 	signal_150 = vec([signal_2; signal]);
@@ -280,6 +284,10 @@ end
 # ╔═╡ 5f5e7e22-085d-48db-8381-67d777b3e27c
 # --Original Function (length = 100,000)
 	@benchmark kxcorr(signal_2, ref_signal)
+
+# ╔═╡ d22f2334-95f0-4ca3-8ded-d598b2595de1
+# --Regular function (length = 120,000)
+	@benchmark kxcorr(signal_120, ref_signal)
 
 # ╔═╡ 77f744b4-4eb0-438d-8047-6e9513ac1310
 # --Regular function (length = 150,000)
@@ -438,6 +446,10 @@ end
 # --CUDA Function (length = 100,000)
 	@benchmark kxcorr_CUDA(signal_2, ref_signal)
 
+# ╔═╡ d6a6d918-c33e-4753-925e-748e5cdcec14
+# --CUDA Function (length = 120,000)
+	@benchmark kxcorr_CUDA(signal_120, ref_signal)
+
 # ╔═╡ 25f7b33f-01f8-4539-99fa-472c6c8efdb4
 # --CUDA function (length = 150,000)
 	@benchmark kxcorr_CUDA(signal_150, ref_signal)
@@ -526,9 +538,9 @@ version = "5.0.0"
 
 [[deps.CUDA_Driver_jll]]
 deps = ["Artifacts", "JLLWrappers", "LazyArtifacts", "Libdl", "Pkg"]
-git-tree-sha1 = "35a37bb72b35964f2895c12c687ae263b4ac170c"
+git-tree-sha1 = "2f64185414751a5f878c4ab616c0edd94ade3419"
 uuid = "4ee394cb-3365-5eb0-8335-949819d2adfc"
-version = "0.6.0+3"
+version = "0.6.0+4"
 
 [[deps.CUDA_Runtime_Discovery]]
 deps = ["Libdl"]
@@ -538,9 +550,9 @@ version = "0.2.2"
 
 [[deps.CUDA_Runtime_jll]]
 deps = ["Artifacts", "CUDA_Driver_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "TOML"]
-git-tree-sha1 = "bfe5a693a11522d58392f742243f2b50dc27afd6"
+git-tree-sha1 = "a38bc81bd6fdc7334de537aec3ae60e7b098daa2"
 uuid = "76a88914-d11a-5bdc-97e0-2f5a05c973a2"
-version = "0.9.2+0"
+version = "0.9.2+4"
 
 [[deps.Cairo_jll]]
 deps = ["Artifacts", "Bzip2_jll", "CompilerSupportLibraries_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "JLLWrappers", "LZO_jll", "Libdl", "Pixman_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Zlib_jll", "libpng_jll"]
@@ -1828,6 +1840,9 @@ version = "1.4.1+1"
 # ╠═7d87d7ba-2ad1-47b8-ba32-d3677c20eb2b
 # ╠═5f5e7e22-085d-48db-8381-67d777b3e27c
 # ╠═bb3b16f4-fedf-45c6-9e04-0ab1aa83ca38
+# ╠═9c189ca5-2854-42d1-802e-422943d7fa2e
+# ╠═d22f2334-95f0-4ca3-8ded-d598b2595de1
+# ╠═d6a6d918-c33e-4753-925e-748e5cdcec14
 # ╠═94817965-7a17-4634-a86b-f3841aa1ace1
 # ╠═77f744b4-4eb0-438d-8047-6e9513ac1310
 # ╠═25f7b33f-01f8-4539-99fa-472c6c8efdb4

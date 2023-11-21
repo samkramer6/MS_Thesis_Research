@@ -5,14 +5,13 @@
 
     Sam Kramer
     August 30th, 2023
-
 =#
 
 # --Include statements
     include("library_module.jl")
 
 # --Using Statements
-    using GLMakie
+    using Plots
     using FFTW
     using SignalAnalysis
     using MAT
@@ -37,7 +36,6 @@ function find_chirps(file_path, mic_num, bat_type)
         bat_type = String(bat_type);
         bat_type = uppercase(bat_type);
 
-        try
             if bat_type[1] == 'H'
                 # --Load in Hipposiderus call
                     Hippo_data = "C:\\Users\\Sam Kramer\\Desktop\\Engineering\\Chirp Detection Algorithm\\Matlab Libraries\\Hippo_example_chirp.mat";
@@ -53,9 +51,6 @@ function find_chirps(file_path, mic_num, bat_type)
                     weight = 1.3;
 
             end
-        catch
-            println("Error Loading Template Data: Testing Only Against Linear Chirp")
-        end
 
     # --Create the FM_chirp
         FM_chirp = create_chirp(120000, 100000, 0.05, fs, "false");
@@ -65,12 +60,12 @@ function find_chirps(file_path, mic_num, bat_type)
         println("This May Take a Moment...")
 
     # --Filter data out {Calls filter_data()}
-        filtered_data = filter_data(data, fs);
+        filtered_data = filter_data(mic_data, fs);
 
     ####################################### Time Domain Section #######################################
 
     # --Create initial guesses in time domain {Calls time_domain_finder()}
-        time_indeces = time_domain_finder(filtered_data, CFFM_chirp, FM_chirp, weight);
+        time_indeces = time_domain_finder(filtered_data, fs, CFFM_chirp, FM_chirp, weight);
 
     # --Outline confirmation message
         println("Time Domain Finder Done")
