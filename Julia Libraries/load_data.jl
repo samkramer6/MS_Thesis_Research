@@ -21,6 +21,5 @@ function load_data(file_path)
         fs = round(1/(time[10] - time[9]));
 
     # --Outline
-        println("Data Loaded Successfully")
         return mic_data, time, fs
 end

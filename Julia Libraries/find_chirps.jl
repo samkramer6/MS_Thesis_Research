@@ -21,7 +21,7 @@
 
 ############################################ Parameters ###########################################
     file_path = "C:\\Users\\Sam Kramer\\Desktop\\Engineering\\IRES 2023\\IRES 2023 -- Acoustics Array\\Test Data\\Testing 20JUL23\\Bat1_Trial2_20JUL2023.mat";
-    mic_num = 1;
+    mic_num = 32;
     bat_type = "Hipposiderus";
 
 ##################################### Function Definition #########################################
@@ -65,7 +65,7 @@ function find_chirps(file_path, mic_num, bat_type)
     ####################################### Time Domain Section #######################################
 
     # --Create initial guesses in time domain {Calls time_domain_finder()}
-        time_indeces = time_domain_finder(filtered_data, fs, CFFM_chirp, FM_chirp, weight);
+        time_indeces = time_domain_finder(filtered_data, fs, FM_chirp, CFFM_chirp, weight);
 
     # --Outline confirmation message
         println("Time Domain Finder Done")
@@ -89,4 +89,5 @@ function find_chirps(file_path, mic_num, bat_type)
     # --Outline confirmation message
         println("Finder Done")
 
+    return time_indeces
 end     # End function
