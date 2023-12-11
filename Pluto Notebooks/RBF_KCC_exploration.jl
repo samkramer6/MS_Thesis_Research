@@ -146,9 +146,17 @@ This part of the notebook will be on the comparison of the speeds in the CUDA fu
 # --Create signal (length = 250,000)
 	signal_250 = vec(rand(Float64, 250000));
 
+# ╔═╡ 89e801f7-00a2-4148-aab4-efe646b61d8f
+# --Create signal (length = 400,000)
+	signal_400 = vec(rand(Float64, 400000));
+
 # ╔═╡ c3bbebe4-461e-4745-a17f-618d6c490ef3
 # --Create signal (length = 500,000)
 	signal_500 = vec(rand(Float64, 500000));
+
+# ╔═╡ 980add8c-bcd7-4f1a-8aff-d0cb9337372f
+# --Create signal (length = 600,000)
+	signal_600 = vec(rand(Float64, 600000));
 
 # ╔═╡ 3ec321e8-8072-46b8-8b90-3883c269136e
 # --Create signal (length = 750,000)
@@ -314,9 +322,17 @@ end
 # --Regular function (length = 250,000)
 	@btime kxcorr(signal_250, ref_signal);
 
+# ╔═╡ ad2b5da0-ec26-4d8e-8c08-df510b1bd068
+# --Regular function (length = 400,000)
+	@btime kxcorr(signal_400, ref_signal);
+
 # ╔═╡ b9a0e078-c8df-4824-b604-dd30b372f5c7
 # --Regular function (length = 500,000)
 	@btime kxcorr(signal_500, ref_signal);
+
+# ╔═╡ b322e537-d9a3-44a4-956e-45f6c5bb84b1
+# --Regular function (length = 600,000)
+	@btime kxcorr(signal_600, ref_signal);
 
 # ╔═╡ 50183c13-6cca-449f-8bca-e6690f4d4b77
 # --Regular function (length = 750,000)
@@ -491,9 +507,17 @@ end
 # --CUDA function (length = 250,000)
 	@btime kxcorr_CUDA(signal_250, ref_signal);
 
+# ╔═╡ 9f2f3bf8-7f3e-4204-bdc9-eb8a2a1845dd
+# --CUDA Function (length = 400,000)
+	@btime kxcorr_CUDA(signal_400, ref_signal);
+
 # ╔═╡ a9969124-6091-49a9-87b3-2699d9aa6190
 # --CUDA function (length = 500,000)
 	@btime kxcorr_CUDA(signal_500, ref_signal);
+
+# ╔═╡ 9ba96555-71b8-4655-8bb0-9e7c4ffa0313
+# --CUDA Function
+	@btime kxcorr_CUDA(signal_600, ref_signal);
 
 # ╔═╡ 079e8a2f-e9ff-45a9-bfc6-0729693dc988
 # --CUDA function (length = 750,000)
@@ -1993,9 +2017,15 @@ version = "1.4.1+1"
 # ╠═56b731f9-3de2-425a-8e82-3577922ef9e4
 # ╠═505bd0da-72c5-46f6-b7c7-38c97d422880
 # ╠═4923334e-aee8-4bca-9793-7cf85dbfcdc7
+# ╠═89e801f7-00a2-4148-aab4-efe646b61d8f
+# ╠═ad2b5da0-ec26-4d8e-8c08-df510b1bd068
+# ╠═9f2f3bf8-7f3e-4204-bdc9-eb8a2a1845dd
 # ╠═c3bbebe4-461e-4745-a17f-618d6c490ef3
 # ╠═b9a0e078-c8df-4824-b604-dd30b372f5c7
 # ╠═a9969124-6091-49a9-87b3-2699d9aa6190
+# ╠═980add8c-bcd7-4f1a-8aff-d0cb9337372f
+# ╠═b322e537-d9a3-44a4-956e-45f6c5bb84b1
+# ╠═9ba96555-71b8-4655-8bb0-9e7c4ffa0313
 # ╠═3ec321e8-8072-46b8-8b90-3883c269136e
 # ╠═50183c13-6cca-449f-8bca-e6690f4d4b77
 # ╠═079e8a2f-e9ff-45a9-bfc6-0729693dc988
