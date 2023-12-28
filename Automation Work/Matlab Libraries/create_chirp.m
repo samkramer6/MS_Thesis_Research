@@ -39,18 +39,23 @@ function signal = create_chirp(chirp_type, number, length, freq_start, freq_end,
             disp("Chirp Created")
         catch
             [s,f,t] = spectrogram(signal, hamming(300), 290, [], fs,'yaxis');
-                s = 20*log10(abs(s));
-                s = s - max(s);
+                t = t.*1000;
+                f = f ./ 1000;
+                s = abs(s);
+                s = s-min(min(s));
+                s = s ./ max(max(s));
                 imagesc(t,f,s)
                 set(gca,"YDir","normal")
                 colormap('jet')
                 clb = colorbar;
-                clim([-60 0])
+                % clim([-60 0])
                 title('Unfiltered Spectrogram of Data')
-                xlabel('Time (s)');
-                ylabel('Frequency (Hz)')
-                clb.Title.String = "Power (dB)";
-                ylim([30000 max(f)])
+                xlabel('Time (ms)');
+                ylabel('Frequency (kHz)')
+                clb.Title.String = "Normalized Amplitude";
+                maxf = max(max(f));
+                minf = min(min(f));
+                ylim([minf maxf])
 
             disp("Default Spectrogram Settings Used")
         end
