@@ -36,7 +36,6 @@ function signal = create_chirp(chirp_type, number, length, freq_start, freq_end,
         try
             spectrogram_function(signal,fs,0,length)   % My own function
 
-            disp("Chirp Created")
         catch
             [s,f,t] = spectrogram(signal, hamming(300), 290, [], fs,'yaxis');
                 t = t.*1000;
@@ -57,7 +56,6 @@ function signal = create_chirp(chirp_type, number, length, freq_start, freq_end,
                 minf = min(min(f));
                 ylim([minf maxf])
 
-            disp("Default Spectrogram Settings Used")
         end
     end
 end
