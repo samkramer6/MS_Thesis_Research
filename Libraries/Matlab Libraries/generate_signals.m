@@ -1,4 +1,4 @@
-function [white_signal, brown_signal, reference, ref_chirp_long] = generate_signals(alpha, beta)
+function [white_signal, brown_signal, reference, ref_chirp_long, time] = generate_signals(alpha, beta)
 %
 %   This is a function that is meant to streamline the generation for the
 %   different signals that 
@@ -13,12 +13,12 @@ function [white_signal, brown_signal, reference, ref_chirp_long] = generate_sign
 
     % --Generate chirp
         reference = create_chirp("logarithmic", T, T, 10, 3000, fs+1, "False");
-        reference = reference';
+        ref = reference';
 
     % --Zero padding
         time = 0:1/fs:10;
         zero_pad = zeros(1,(length(time) - length(t))/2);
-        ref_chirp_long = [zero_pad, reference, zero_pad];
+        ref_chirp_long = [zero_pad, ref, zero_pad];
 
     % --Generate noise
         
@@ -35,5 +35,15 @@ function [white_signal, brown_signal, reference, ref_chirp_long] = generate_sign
     % --Create entire noisy signals
         white_signal = white_data + ref_chirp_long;
         brown_signal = brownian_data + ref_chirp_long;
+
+    % --Calculate the SNR values of the signals
+        signal_power = sum(ref.^2)/(2*length(ref) + 1);
+        w_noise_power = sum(white_data.^2)/(2*length(white_data) + 1);
+        b_noise_power = sum(brown_signal.^2)/(2*length(brownian_data) + 1);
+
+        w_snr = 10*log10(signal_power/w_noise_power);
+        b_snr = 10*log10(signal_power/b_noise_power);
         
+    % --Output
+        fprintf("White signal SNR is %3.3f, and Brownian Signal SNR is %3.3f", w_snr, b_snr)
 end
