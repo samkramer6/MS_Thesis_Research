@@ -47,11 +47,11 @@ function spectrogram_function_dB(data, fs, time_start, time_end)
         set(gca,"YDir","normal")
         colormap('jet')
         clb = colorbar;
-        clim([-60 0])
         title('Unfiltered Spectrogram of Data')
         xlabel('Time (s)');
         ylabel('Frequency (Hz)')
         clb.Title.String = "Power (dB)";
-        ylim([30000 max(f)])
+        max_f = max(max(f));
+        ylim([0 max_f])
 
 end

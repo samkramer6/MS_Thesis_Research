@@ -45,5 +45,5 @@ function [white_signal, brown_signal, reference, ref_chirp_long, time] = generat
         b_snr = 10*log10(signal_power/b_noise_power);
         
     % --Output
-        fprintf("White signal SNR is %3.3f, and Brownian Signal SNR is %3.3f", w_snr, b_snr)
+        % fprintf("White signal SNR is %3.3f, and Brownian Signal SNR is %3.3f", w_snr, b_snr)
 end
