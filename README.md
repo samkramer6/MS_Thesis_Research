@@ -19,3 +19,8 @@ This is a folder that contains all the Matlab notebooks as .mlx live script file
 
 ### Pluto Notebooks
 This is a folder containing all Pluto notebooks for the data analysis done in Julia. These notebooks were used when Matlab was insufficient. There is a significant amount of text explaining work within these as well. 
+
+## Files
+
+### Thesis Research.bib
+This is a bibtex file that was used in the writing of the thesis research paper. It includes all references used in the paper.
