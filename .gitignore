@@ -28,5 +28,7 @@ Manifest.toml
 *.jpeg
 *.mat
 *.fig
+*.gif
+
 Paper/
 
