@@ -51,7 +51,9 @@ function signal = create_chirp(chirp_type, number, length, freq_start, freq_end,
                 title('Unfiltered Spectrogram of Data')
                 xlabel('Time (ms)');
                 ylabel('Frequency (kHz)')
-                clb.Title.String = "Normalized Amplitude";
+                clb.Label.String = "Normalized Amplitude";
+                clb.Label.set("FontSize",12)
+                clb.Label.set("FontName","Serif")
                 maxf = max(max(f));
                 minf = min(min(f));
                 ylim([minf maxf])

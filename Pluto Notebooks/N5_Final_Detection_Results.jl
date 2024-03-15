@@ -4,7 +4,7 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ a182e1a3-81d8-474f-8186-081e789dd271
+# ╔═╡ b5a52028-e006-11ee-2566-bb18e6344d6b
 begin
 	using Plots
 	using MAT
@@ -14,109 +14,329 @@ begin
 	gr()
 end
 
-# ╔═╡ d9035536-cad7-11ee-27c7-bb6200dca19f
-md"# Notebook 3: Correlation Detection Simulation Results
+# ╔═╡ 41f56203-2403-4737-b32c-6e75870ab4ea
+md"# Detection Simulation Results
 
-This notebook will be used to conglomerate all the classic correlation detection results, plot it, and then output it again as a new .mat file.
+This notebook will be used to conglomerate all the data used to create the simulation results images for the final paper."
 
-Sam Kramer
+# ╔═╡ 290f19f3-f060-44cb-945d-a655a3dac016
+md"## Correlation Sim Results
 
-Feb 13th, 2024"
+This section will be on getting the Correlation Simulation Results. This will not plot the data and will just grab it from the files."
 
-# ╔═╡ 464c6799-51ad-442b-bc38-1272297ff7b3
+# ╔═╡ 5ebd4b22-1fac-4b8d-87df-5d448dc375bf
 begin
 	# --loop setup
-		B_SNRs = [0.0];
-		W_SNRs = [0.0];
-		B_detection = [0.0];
-		W_detection = [0.0];
+		B_corr_SNRs = [0.0];
+		W_corr_SNRs = [0.0];
+		B_corr_detection = [0.0];
+		W_corr_detection = [0.0];
 	
 	# --Load in mat files
-		mat_file = glob("Raw Data/Correlation Results/*.mat");
-		size(mat_file,1)
+		mat_file_corr = glob("Raw Data/Correlation Results/*.mat");
+		size(mat_file_corr,1)
 
-	for i in range(1, size(mat_file, 1), step = 1)
+	for i in range(1, size(mat_file_corr, 1), step = 1)
 
 		# --Select File
-			file = matread(mat_file[i]); 	# Open file
+			file = matread(mat_file_corr[i]); 	# Open file
 		
 		# --Brownian Data
-			B_det = vec(file["B_detection"]);
-			B_S = vec(file["B_SNRs"]);
+			B_det1 = vec(file["B_detection"]);
+			B_S1 = vec(file["B_SNRs"]);
 
-			append!(B_SNRs, B_S);
-			append!(B_detection, B_det);
+			append!(B_corr_SNRs, B_S1);
+			append!(B_corr_detection, B_det1);
 
 		# --White Data
-			W_det = vec(file["W_detection"]);
-			W_S = vec(file["W_SNRs"]);
+			W_det1 = vec(file["W_detection"]);
+			W_S1 = vec(file["W_SNRs"]);
 
-			append!(W_SNRs, W_S);
-			append!(W_detection, W_det);
+			append!(W_corr_SNRs, W_S1);
+			append!(W_corr_detection, W_det1);
 
 	end
 
 	# --Eliminate First Value
-		popfirst!(W_SNRs);
-		popfirst!(B_SNRs);
-		popfirst!(W_detection);
-		popfirst!(B_detection);
+		popfirst!(W_corr_SNRs);
+		popfirst!(B_corr_SNRs);
+		popfirst!(W_corr_detection);
+		popfirst!(B_corr_detection);
 	
 end
 
-# ╔═╡ effd28d3-9a18-4241-9a1d-292c876385ae
+# ╔═╡ 03f24d00-8a63-45a3-8e50-d0143191d1ab
+md"## Matched Filter Results
+
+This section will focus on the Matched Filter results that were taken by the detection simulation."
+
+# ╔═╡ 1f45020f-9da3-4a57-8070-c1c2956c9edb
 begin
-	pB = scatter(B_SNRs, B_detection, 
-		xlabel = "SNR (dB)", 
-		label = false, 
-		title = "Correlation Probability of Detection in Brownian Noise",
+	# --loop setup
+		B_m_SNRs = [0.0];
+		W_m_SNRs = [0.0];
+		B_m_detection = [0.0];
+		W_m_detection = [0.0];
+	
+	# --Load in mat files
+		mat_file_matched = glob("Raw Data/Matched Filter Results/*.mat");
+		size(mat_file_matched,1)
+
+	for i in range(1, size(mat_file_matched, 1), step = 1)
+
+		# --Select File
+			file = matread(mat_file_matched[i]); 	# Open file
+		
+		# --Brownian Data
+			B_det2 = vec(file["B_detection"]);
+			B_S2 = vec(file["B_SNRs"]);
+
+			append!(B_m_SNRs, B_S2);
+			append!(B_m_detection, B_det2);
+
+		# --White Data
+			W_det2 = vec(file["W_detection"]);
+			W_S2 = vec(file["W_SNRs"]);
+
+			append!(W_m_SNRs, W_S2);
+			append!(W_m_detection, W_det2);
+
+	end
+
+	# --Eliminate First Value
+		popfirst!(W_m_SNRs);
+		popfirst!(B_m_SNRs);
+		popfirst!(W_m_detection);
+		popfirst!(B_m_detection);
+	
+end
+
+# ╔═╡ 7a9602c4-381a-4fa5-9a4d-eef1d8a5f041
+md"## Cubic Kernel KCC Results
+
+This section gathers the data from the cubic kernel results."
+
+# ╔═╡ cef7b9da-7927-4934-9564-3f20856ac70d
+begin
+	# --loop setup
+		B_cubic_SNRs = [0.0];
+		W_cubic_SNRs = [0.0];
+		B_cubic_detection = [0.0];
+		W_cubic_detection = [0.0];
+	
+	# --Load in mat files
+		mat_file_cubic = glob("Raw Data/Cubic Kernel Results/*.mat");
+
+	for i in range(1, size(mat_file_cubic, 1), step = 1)
+
+		# --Select File
+			file = matread(mat_file_cubic[i]); 	# Open file
+		
+		# --Brownian Data
+			B_det3 = vec(file["B_detection"]);
+			B_S3 = vec(file["B_SNRs"]);
+
+			append!(B_cubic_SNRs, B_S3);
+			append!(B_cubic_detection, B_det3);
+
+		# --White Data
+			W_det3 = vec(file["W_detection"]);
+			W_S3 = vec(file["W_SNRs"]);
+
+			append!(W_cubic_SNRs, W_S3);
+			append!(W_cubic_detection, W_det3);
+
+	end
+
+	# --Eliminate First Value
+		popfirst!(W_cubic_SNRs);
+		popfirst!(B_cubic_SNRs);
+		popfirst!(W_cubic_detection);
+		popfirst!(B_cubic_detection);
+	
+end
+
+# ╔═╡ 895ab58a-eb68-4280-bed6-98c43e59bc56
+md"## Linear-Absolute Value Kernel KCC Results
+
+This section will gather the LAbs Kernel KCC results."
+
+# ╔═╡ 59be6676-69ce-4307-a28e-80b692437601
+begin
+	# --Loop Setup
+		B_Labs_SNRs = [0.0];
+		W_Labs_SNRs = [0.0];
+		B_Labs_detection = [0.0];
+		W_Labs_detection = [0.0];
+
+	# --Load in Mat Data Files
+		mat_file_Labs = glob("Raw Data/LAbs Kernel Results/*.mat");
+
+	for i in range(1, size(mat_file_Labs, 1), step = 1);
+
+		# --Select File
+			file = matread(mat_file_Labs[i]); 	# read specific file
+
+		# --Brownian Data
+			B_det4 = vec(file["B_detection"]);
+			B_S4 = vec(file["B_SNRs"]);
+
+			append!(B_Labs_SNRs, B_S4);
+			append!(B_Labs_detection, B_det4);
+
+		# --White Data
+			W_det4 = vec(file["W_detection"]);
+			W_S4 = vec(file["W_SNRs"]);
+
+			append!(W_Labs_SNRs, W_S4);
+			append!(W_Labs_detection, W_det4);
+
+	end
+
+	# --Eliminate First Value
+		popfirst!(W_Labs_SNRs);
+		popfirst!(B_Labs_SNRs);
+		popfirst!(W_Labs_detection);
+		popfirst!(B_Labs_detection);
+end
+
+# ╔═╡ 76ff36f3-bddf-4e27-987e-452be21147c3
+md"## Gaussian (RBF) Kernel KCC Results
+
+This section will collect the data of the RBF Kernel detection results simulation."
+
+# ╔═╡ c467ba7b-8829-4e69-80ec-56ff86d98a25
+begin
+	# --Loop Setup
+		B_rbf_SNRs = [0.0];
+		W_rbf_SNRs = [0.0];
+		B_rbf_detection = [0.0];
+		W_rbf_detection = [0.0];
+
+	# --Load in Mat Data Files
+		mat_file_rbf = glob("Raw Data/RBF Kernel Results/*.mat");
+
+	for i in range(1, size(mat_file_rbf, 1), step = 1);
+
+		# --Select File
+			file = matread(mat_file_rbf[i]); 	# read specific file
+
+		# --Brownian Data
+			B_det5 = vec(file["B_detection"]);
+			B_S5 = vec(file["B_SNRs"]);
+
+			append!(B_rbf_SNRs, B_S5);
+			append!(B_rbf_detection, B_det5);
+
+		# --White Data
+			W_det5 = vec(file["W_detection"]);
+			W_S5 = vec(file["W_SNRs"]);
+
+			append!(W_rbf_SNRs, W_S5);
+			append!(W_rbf_detection, W_det5);
+
+	end
+
+	# --Eliminate First Value
+		popfirst!(W_rbf_SNRs);
+		popfirst!(B_rbf_SNRs);
+		popfirst!(W_rbf_detection);
+		popfirst!(B_rbf_detection);
+end
+
+# ╔═╡ 346865b1-07c9-427c-95af-2d37c6208d42
+md"## Plotting
+
+This section will plot all the different data sets to compare their performance."
+
+# ╔═╡ 3a50df09-4d2a-4ad4-b838-429b72de6a85
+begin
+	
+	pW1 = scatter(W_corr_SNRs, W_corr_detection, 
+		label = "Correlation", 
+		title = "Correlation Probability of Detection in White Noise",
 		titlefont = (12, "Computer Modern"),
 		guidefont = (9, "Computer Modern"),
 		xtickfont = (7, "Computer Modern"),
-		xticks = -40:2:0,
+		legendfont = (7, "Computer Modern"),
+		xticks = -40:2:1,
 		xlims = (-40, 1),
 		ytickfont = (9, "Computer Modern"),
 		marker = :diamond,
 		markersize = 3,
 		color = :cadetblue)
+
+	pw2 = scatter!(W_m_SNRs, W_m_detection,
+		label = "Matched Filter",
+		marker = :diamond,
+		markersize = 3,
+		color = :red)
+
+	pw3 = scatter!(W_cubic_SNRs, W_cubic_detection,
+		label = "Cubic Kernel",
+		marker = :diamond,
+		markersize = 3,
+		color = :orange)
+
+	pw4 = scatter!(W_Labs_SNRs, W_Labs_detection,
+		label = "L-Abs Kernel",
+		marker = :diamond,
+		markersize = 3,
+		color = :yellow)
 	
-	pW = scatter(W_SNRs, W_detection, 
-		label = false, 
-		title = "Correlation Probability of Detection in White Noise",
+	pw5 = scatter!(W_rbf_SNRs, W_rbf_detection,
+		label = "Gaussian Kernel",
+		marker = :diamond,
+		markersize = 3,
+		color = :purple)
+
+	pB1 = scatter(B_corr_SNRs, B_corr_detection, 
+		xlabel = "SNR (dB)", 
+		label = "Correlation", 
+		title = "Correlation Probability of Detection in Brownian Noise",
 		titlefont = (12, "Computer Modern"),
 		guidefont = (9, "Computer Modern"),
 		xtickfont = (7, "Computer Modern"),
-		xticks = -40:2:0,
+		legendfont = (7, "Computer Modern"),
+		xticks = -40:2:1,
 		xlims = (-40, 1),
 		ytickfont = (9, "Computer Modern"),
+		marker = :diamond,
 		markersize = 3,
-		color = :orchid3)
+		color = :cadetblue)
+
+	pB4 = scatter!(B_m_SNRs, B_m_detection,
+		label = "Matched Filter",
+		marker = :diamond,
+		markersize = 3,
+		color = :red)
+
+	pB3 = scatter!(B_cubic_SNRs, B_cubic_detection,
+		label = "Cubic Kernel",
+		marker = :diamond,
+		markersize = 3,
+		color = :orange)
+
+	pB2 = scatter!(B_Labs_SNRs, B_Labs_detection,
+		label = "L-Abs Kernel",
+		marker = :diamond,
+		markersize = 3,
+		color = :yellow)
+
+	pB5 = scatter!(B_rbf_SNRs, B_rbf_detection,
+		label = "Gaussian Kernel",
+		marker = :diamond,
+		markersize = 3,
+		color = :purple)
+
+	plot(pW1, pB1, layout = [1, 1], ylabel = "Probability of Detection", dpi = 500)
 	
-	plot(pW, pB, layout = [1, 1], ylabel = "Probability of Detection", dpi = 500)
 end
 
-# ╔═╡ 01f1b4b4-3b55-4c0d-af3d-3a128062164e
-md"#### Save the Image (Enable Cell to Run Code)
-
-Save as a pdf to have higher quality rendering."
-
-# ╔═╡ 9389d4cd-3ac6-4352-9315-f488387d29b2
+# ╔═╡ 808c374d-09b0-4982-9990-07eb3512a605
 # ╠═╡ disabled = true
 #=╠═╡
-savefig("Correlation_simulation_results.pdf")
-  ╠═╡ =#
-
-# ╔═╡ f9d1c1e5-f76d-4af4-af79-29f170199a0d
-md"#### Save the File to a .mat file (Enable Cell To Run Code)"
-
-# ╔═╡ 83e1dcac-9291-4bc7-bbbf-36bf9f7fa9c5
-# ╠═╡ disabled = true
-#=╠═╡
-matwrite("Correlation_Results.mat", Dict(
-	"B_SNRs" => B_SNRs,
-	"W_SNRs" => W_SNRs,
-	"W_detection" => W_detection,
-	"B_detection" => B_detection))
+savefig("detection_simulation_results.pdf")
   ╠═╡ =#
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -1356,13 +1576,20 @@ version = "1.4.1+1"
 """
 
 # ╔═╡ Cell order:
-# ╟─d9035536-cad7-11ee-27c7-bb6200dca19f
-# ╠═a182e1a3-81d8-474f-8186-081e789dd271
-# ╠═464c6799-51ad-442b-bc38-1272297ff7b3
-# ╠═effd28d3-9a18-4241-9a1d-292c876385ae
-# ╟─01f1b4b4-3b55-4c0d-af3d-3a128062164e
-# ╠═9389d4cd-3ac6-4352-9315-f488387d29b2
-# ╟─f9d1c1e5-f76d-4af4-af79-29f170199a0d
-# ╠═83e1dcac-9291-4bc7-bbbf-36bf9f7fa9c5
+# ╟─41f56203-2403-4737-b32c-6e75870ab4ea
+# ╠═b5a52028-e006-11ee-2566-bb18e6344d6b
+# ╟─290f19f3-f060-44cb-945d-a655a3dac016
+# ╠═5ebd4b22-1fac-4b8d-87df-5d448dc375bf
+# ╟─03f24d00-8a63-45a3-8e50-d0143191d1ab
+# ╠═1f45020f-9da3-4a57-8070-c1c2956c9edb
+# ╟─7a9602c4-381a-4fa5-9a4d-eef1d8a5f041
+# ╠═cef7b9da-7927-4934-9564-3f20856ac70d
+# ╟─895ab58a-eb68-4280-bed6-98c43e59bc56
+# ╠═59be6676-69ce-4307-a28e-80b692437601
+# ╟─76ff36f3-bddf-4e27-987e-452be21147c3
+# ╠═c467ba7b-8829-4e69-80ec-56ff86d98a25
+# ╟─346865b1-07c9-427c-95af-2d37c6208d42
+# ╠═3a50df09-4d2a-4ad4-b838-429b72de6a85
+# ╠═808c374d-09b0-4982-9990-07eb3512a605
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

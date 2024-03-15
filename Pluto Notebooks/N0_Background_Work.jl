@@ -4,136 +4,406 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ a182e1a3-81d8-474f-8186-081e789dd271
+# ╔═╡ d82606fe-e0d5-11ee-3087-73ae9d1c8537
 begin
 	using Plots
-	using MAT
-	using Glob
-	using CurveFit
 	using FFTW
-	gr()
+	using StatsBase
 end
 
-# ╔═╡ d9035536-cad7-11ee-27c7-bb6200dca19f
-md"# Notebook 3: Correlation Detection Simulation Results
+# ╔═╡ 6036be53-637b-4029-8357-7ba1a78d63da
+md"# Background Section Notebook
 
-This notebook will be used to conglomerate all the classic correlation detection results, plot it, and then output it again as a new .mat file.
+This notebook is dedicated to reproducing the math from the background section that was done in MATLAB into Julia to have access to the better vector graphics for the thesis paper. The examples will mostly be the same.
 
 Sam Kramer
 
-Feb 13th, 2024"
+March 12th, 2024"
 
-# ╔═╡ 464c6799-51ad-442b-bc38-1272297ff7b3
+# ╔═╡ 04db5ac0-3a9f-4b14-91ff-cdd499c692d4
+md"## Signal Generation"
+
+# ╔═╡ 236557c9-2c84-45a4-b605-6c3f1fce750c
+md"This section is going to be on generating the following signals:
+
+1. A reference signal that is a simple sinusoid wavelet
+1. A noisy signal with the reference centered at the middle
+1. A linear chirp signal (Swept Frequency Sine Function)
+1. A basic noise vector with no signal"
+
+# ╔═╡ 8e9e4950-b5c3-4e03-b33b-30a91767a773
 begin
-	# --loop setup
-		B_SNRs = [0.0];
-		W_SNRs = [0.0];
-		B_detection = [0.0];
-		W_detection = [0.0];
+	# --Basic Signal
+		fs = 10000;
+		T = 1;
+		f = 25;
+		A = 1;
+		time = collect(0:1/fs:T);
+		amplitude = A .* sin.(pi.*time);
+		signal = amplitude .* sin.(f .* 2. * pi .* time);
+
+	# --Plotting
+		signal_plot = plot(time, signal,
+					 	guidefont = (10, "Computer Modern"),
+						tickfont = ("Computer Modern"),
+						ylabel = "Amplitude",
+						titlefont = ("Computer Modern"),
+						label = false,
+						title = "Reference Signal",
+						color = :cadetblue4,
+						linewidth = 1.5)
+
+	# --Padding the Signal for later use
+		pad = vec(zeros(1, 4*fs));
+		append!(signal, pad)
+end
+
+# ╔═╡ 954adca0-c269-4c0a-af14-cbc1ce1ddcd2
+begin
+	# --Long Signal Creation
+		signal_long = vec(zeros(1, 2*fs));
+		zero_pad2 = signal_long;
+		append!(signal_long, signal);
+		append!(signal_long, zero_pad2);
+		signal_long = signal_long[1:5*fs + 1];
+
+		time_long = collect(0:1/fs:5);
+
+end
+
+# ╔═╡ 07151a33-78d7-4643-9660-34eddd6defdf
+begin
+	# --Creating Noisy Signal
+		alpha = 1;
+		noise = alpha .* vec(rand(Float64, 1, length(time_long)));
+		noisy_signal = signal_long .+ noise;
+		noisy_signal_demeaned = noisy_signal .- mean(noisy_signal);
+
+	# --Subplot generation
+		noisy_signal_plot = plot(time_long, noisy_signal_demeaned,
+								guidefont = (10, "Computer Modern"),
+								tickfont = ("Computer Modern"),
+								xlabel = "Time (s)",
+								ylabel = "Amplitude",
+								titlefont = ("Computer Modern"),
+								label = false,
+								title = "Noisy Signal",
+								color = :cadetblue4,
+								linewidth = 1.5)
+
+		plot(signal_plot, noisy_signal_plot, layout = [1, 1], dpi = 500)
+
+	# --Annotation of the SNR
+		annotate!(3.01, 1.01, text("SNR = -2.51 dB", :left, :bottom, 9, "Computer Modern"))
+
 	
-	# --Load in mat files
-		mat_file = glob("Raw Data/Correlation Results/*.mat");
-		size(mat_file,1)
+end
 
-	for i in range(1, size(mat_file, 1), step = 1)
+# ╔═╡ 65f27a3a-507f-4b73-8813-f43681141380
+begin
+	f_sweep = LinRange(10, 300, 5*fs+1);
+	chirp = sin.(f_sweep .* pi .* time_long);
 
-		# --Select File
-			file = matread(mat_file[i]); 	# Open file
+	noisy_chirp = chirp + noise;
+end
+
+# ╔═╡ 44934b1a-e67f-4599-881e-e41f48c73db7
+md"## Cross Correlation Example
+
+This section focuses on the cross-correlation and the cross spectral density calculations and image generation."
+
+# ╔═╡ 687af890-4539-43fb-a15b-d83e6b7bb248
+function cross_correlation(x, y)
+	f_x = fft(x);
+	f_y = fft(y);
+
+	corr = real.(ifft(f_x .* conj(f_y)));
+	corr_out = corr ./ maximum(corr);
+	return corr_out
+end
+
+# ╔═╡ 24d12d28-1d09-435c-9549-c0bedbe80823
+begin
+	xcorr_example = cross_correlation(noisy_signal, signal);
+
+	xcorr_plot = plot(xcorr_example,
+					guidefont = (10, "Computer Modern"),
+					tickfont = ("Computer Modern"),
+					xlabel = "Lags (\\tau)",
+					ylabel = "Amplitude",
+					titlefont = ("Computer Modern"),
+					label = false,
+					title = "Cross-correlation Output",
+					color = :cadetblue,
+					dpi = 500,
+					linewidth = 1.5)
+end
+
+# ╔═╡ 372ff12b-ebe1-425a-99f8-9bb228d43771
+function CSD(x, y)
+	f_x = fft(x);
+	f_y = fft(y);
+
+	csd = abs.(f_x .* conj(f_y));
+
+	return csd
+end
+
+# ╔═╡ 5ced682b-d29e-4791-b648-7324c2d9a9c0
+begin
+	csd_example = CSD(noisy_chirp, signal);
+	csd_db = 20 .* log10.(csd_example);
+	frequencies = (0:1/5:fs);
+	
+
+	plot(frequencies, csd_db,
+			xlim = (0, 750),
+			ylim = (-100, 130),
+			xtick = 0:50:1000,
+			ytick = -125:25:125,
+			guidefont = (10, "Computer Modern"),
+			tickfont = ("Computer Modern"),
+			xlabel = "Frequency (Hz)",
+			ylabel = "Amplitude",
+			titlefont = ("Computer Modern"),
+			label = false,
+			title = "Cross-Spectral Density",
+			color = :cadetblue,
+			dpi = 500,
+			linewidth = 1.5)
+end
+
+# ╔═╡ 880e8891-409a-4459-8f20-818cc19873f6
+md"## Autocorrelation Background Work
+
+This section primarily focuses on work for autocorrelation background info."
+
+# ╔═╡ 083a43bf-aca7-4249-b4ab-c003d4973259
+begin
+	# --Create Autocorr Signal with repeated data
+		autocorr_signal = signal .+ signal_long .+ noise;
+		new_signal = autocorr_signal .- mean(autocorr_signal);
 		
-		# --Brownian Data
-			B_det = vec(file["B_detection"]);
-			B_S = vec(file["B_SNRs"]);
+	# --Plots
+		autocorr_data_plot = plot(time_long, new_signal,
+								guidefont = (10, "Computer Modern"),
+								tickfont = ("Computer Modern"),
+								xlabel = "Time (s)",
+								ylabel = "Amplitude",
+								titlefont = ("Computer Modern"),
+								label = false,
+								title = "Noisy Signal",
+								color = :cadetblue4,
+								linewidth = 1.5)
 
-			append!(B_SNRs, B_S);
-			append!(B_detection, B_det);
-
-		# --White Data
-			W_det = vec(file["W_detection"]);
-			W_S = vec(file["W_SNRs"]);
-
-			append!(W_SNRs, W_S);
-			append!(W_detection, W_det);
-
-	end
-
-	# --Eliminate First Value
-		popfirst!(W_SNRs);
-		popfirst!(B_SNRs);
-		popfirst!(W_detection);
-		popfirst!(B_detection);
-	
+		plot(signal_plot, autocorr_data_plot, layout = [1,1], dpi = 500)
 end
 
-# ╔═╡ effd28d3-9a18-4241-9a1d-292c876385ae
+# ╔═╡ 394a8067-1ac4-4f33-b4ec-068c3b74cf20
+function autocorrelation(x::Vector{Float64})
+	fx = fft(x);
+
+	corr = real.(ifft(fx .* conj(fx)));
+	corr_out = corr ./ maximum(corr);
+
+	return corr_out::Vector{Float64}
+end
+
+# ╔═╡ 5c58a075-2305-41e2-a062-13347dc63abc
 begin
-	pB = scatter(B_SNRs, B_detection, 
-		xlabel = "SNR (dB)", 
-		label = false, 
-		title = "Correlation Probability of Detection in Brownian Noise",
-		titlefont = (12, "Computer Modern"),
-		guidefont = (9, "Computer Modern"),
-		xtickfont = (7, "Computer Modern"),
-		xticks = -40:2:0,
-		xlims = (-40, 1),
-		ytickfont = (9, "Computer Modern"),
-		marker = :diamond,
-		markersize = 3,
-		color = :cadetblue)
-	
-	pW = scatter(W_SNRs, W_detection, 
-		label = false, 
-		title = "Correlation Probability of Detection in White Noise",
-		titlefont = (12, "Computer Modern"),
-		guidefont = (9, "Computer Modern"),
-		xtickfont = (7, "Computer Modern"),
-		xticks = -40:2:0,
-		xlims = (-40, 1),
-		ytickfont = (9, "Computer Modern"),
-		markersize = 3,
-		color = :orchid3)
-	
-	plot(pW, pB, layout = [1, 1], ylabel = "Probability of Detection", dpi = 500)
+	corr_example = autocorrelation(new_signal);
+
+	plot(corr_example,
+		guidefont = (10, "Computer Modern"),
+		tickfont = ("Computer Modern"),
+		xlabel = "Lags (\\tau)",
+		ylabel = "Amplitude",
+		titlefont = ("Computer Modern"),
+		label = false,
+		title = "Autocorrelation Output",
+		color = :cadetblue,
+		dpi = 500,
+		linewidth = 1.5)
 end
 
-# ╔═╡ 01f1b4b4-3b55-4c0d-af3d-3a128062164e
-md"#### Save the Image (Enable Cell to Run Code)
+# ╔═╡ 6615abc0-c070-41a7-a483-eee9adb76a92
+function psd(x::Vector{Float64})
+	fx = fft(x);
 
-Save as a pdf to have higher quality rendering."
+	corr = abs.(fx .* conj(fx));
 
-# ╔═╡ 9389d4cd-3ac6-4352-9315-f488387d29b2
-# ╠═╡ disabled = true
-#=╠═╡
-savefig("Correlation_simulation_results.pdf")
-  ╠═╡ =#
+	return corr::Vector{Float64}
+end
 
-# ╔═╡ f9d1c1e5-f76d-4af4-af79-29f170199a0d
-md"#### Save the File to a .mat file (Enable Cell To Run Code)"
+# ╔═╡ 9ed84da8-35cd-4ed8-888d-c7324ebc751e
+begin
+	psd_example = psd(noisy_chirp);
+	psd_db = 20 .* log10.(psd_example);
 
-# ╔═╡ 83e1dcac-9291-4bc7-bbbf-36bf9f7fa9c5
-# ╠═╡ disabled = true
-#=╠═╡
-matwrite("Correlation_Results.mat", Dict(
-	"B_SNRs" => B_SNRs,
-	"W_SNRs" => W_SNRs,
-	"W_detection" => W_detection,
-	"B_detection" => B_detection))
-  ╠═╡ =#
+	plot(frequencies, psd_db,
+		xlim = (-1, 750),
+		ylim = (0, 150),
+		xtick = 0:50:1000,
+		ytick = -125:25:150,
+		guidefont = (10, "Computer Modern"),
+		tickfont = ("Computer Modern"),
+		xlabel = "Frequency (Hz)",
+		ylabel = "Amplitude",
+		titlefont = ("Computer Modern"),
+		label = false,
+		title = "Power Spectral Density",
+		color = :cadetblue,
+		dpi = 500,
+		linewidth = 1.5)
+end
+
+# ╔═╡ d898d9a9-ce17-4ef4-8b8a-a0733013d1bb
+md"## KCC Example Image
+
+This section will be the work for the KCC image creation in the thesis paper."
+
+# ╔═╡ cadf6942-3f96-43c5-ad4d-0b4a3751751c
+function KCC(x::Vector{Float64}, y::Vector{Float64})
+	kx = abs.(x + x);
+	ky = abs.(y + y);
+
+	f_kx = fft(kx);
+	f_ky = fft(ky);
+
+	corr = real.(ifft(f_kx .* conj(f_ky)));
+	corr_out = corr ./ maximum(corr);
+
+	return corr_out::Vector{Float64}
+end
+
+# ╔═╡ d637474b-efc6-4bfb-907e-4996051e9272
+begin
+	kcc_corr = KCC(noisy_signal, signal);
+
+	kcc_plot = plot(kcc_corr,
+					guidefont = (10, "Computer Modern"),
+					titlefont = ("Computer Modern"),
+					tickfont = ("Computer Modern"),
+					xlabel = "Lags (\\tau)",
+					ylabel = "Amplitude",
+					label = false,
+					title = "Kernel Cross-correlation Output",
+					color = :cadetblue,
+					dpi = 500,
+					linewidth = 1.5)
+
+	plot(xcorr_plot, kcc_plot, layout = [1,1], dpi = 500)
+end
+
+# ╔═╡ 1052b08d-f7d1-4d78-bd7d-ce66dcd88ce5
+function SNR(signal::Vector{Float64}, noise::Vector{Float64})
+	signal_power = sum(signal.^2) / (2*10000);
+	noise_power = sum(noise.^2) / (2*length(noise));
+
+	ratio = signal_power / noise_power;
+
+	SNR = 20*log10.(ratio);
+
+	return SNR::Float64
+end
+
+# ╔═╡ 59b6e6d5-450e-48ab-80a9-8c0831ea435c
+data_snr = SNR(signal, noise)
+
+# ╔═╡ d1f0b8b8-8b16-4533-a421-32ad12a2168d
+md"## Kernelized Spectral Analysis
+
+This section will be on the generation of the proof of the Kernelized Spectral Analysis usages. We are going to create the graphs for the formulation section."
+
+# ╔═╡ 16e92b7c-2dad-4a99-b83d-f21d34a272b8
+function kernel(x::Vector{Float64})
+	
+	kx = exp.((-x .^ 1) / 2000);
+
+	return kx::Vector{Float64}
+end
+
+# ╔═╡ 5176d4d1-f401-4a0a-a368-63dda586d7ce
+function KCSD(x::Vector{Float64}, y::Vector{Float64})
+
+	kx = kernel(x);
+	fkx = fft(kx);
+	fy = fft(y);
+
+	kcsd = abs.(fkx .* conj(fy));
+	
+	kcsd_dB = 20 .* log10.(kcsd);
+
+	return kcsd
+end
+
+# ╔═╡ 7392643a-6f36-43c4-94e8-c6047ca367bc
+begin
+	kcsd_dB = KCSD(noisy_chirp, signal);
+
+	plot(frequencies, kcsd_dB,
+		xlim = (-1, 300),
+		#ylim = (-125, 500),
+		xtick = 0:25:1000,
+		ytick = -100:50:3000,
+		guidefont = (10, "Computer Modern"),
+		tickfont = ("Computer Modern"),
+		xlabel = "Frequency (Hz)",
+		ylabel = "Magnitude (dB)",
+		titlefont = ("Computer Modern"),
+		label = false,
+		title = "Kernel Cross-Spectral Density",
+		color = :cadetblue,
+		dpi = 500,
+		linewidth = 1.5)
+end
+
+# ╔═╡ 6091a4be-ca67-474c-bd4e-bcd979e7442b
+function KPSD(x::Vector{Float64})
+
+	kx = kernel(x);
+	fkx = fft(kx);
+	fx = fft(x);
+
+	kpsd = abs.(fkx .* conj(fx));
+
+	kpsd_dB = 20 .* log10.(kpsd);
+
+	return kpsd_dB
+end
+
+# ╔═╡ 9994a4fa-7d98-4e73-a995-5d134f5f365f
+begin
+	kpsd_dB = KPSD(noisy_chirp);
+
+	plot(frequencies, kpsd_dB,
+		xlim = (-1, 750),
+		ylim = (-125, 200),
+		xtick = 0:50:1000,
+		ytick = -125:25:200,
+		guidefont = (10, "Computer Modern"),
+		tickfont = ("Computer Modern"),
+		xlabel = "Frequency (Hz)",
+		ylabel = "Magnitude (dB)",
+		titlefont = ("Computer Modern"),
+		label = false,
+		title = "Kernel Power Spectral Density",
+		color = :cadetblue,
+		dpi = 500,
+		linewidth = 1.5)
+end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
-CurveFit = "5a033b19-8c74-5913-a970-47c3779ef25c"
 FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
-Glob = "c27321d9-0574-5035-807b-f59d2c89b15c"
-MAT = "23992714-dd62-5051-b70f-ba57cb901cac"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
-CurveFit = "~0.6.0"
 FFTW = "~1.8.0"
-Glob = "~1.3.1"
-MAT = "~0.10.6"
 Plots = "~1.40.1"
+StatsBase = "~0.34.2"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -142,7 +412,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.10.2"
 manifest_format = "2.0"
-project_hash = "92b4c062a6ecc4686da1ac8d87c3229001929a0a"
+project_hash = "ca62a7b84da13693ff5eb68683b3e1c188cc4a3e"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -172,11 +442,6 @@ uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 git-tree-sha1 = "2dc09997850d68179b69dafb58ae806167a32b1b"
 uuid = "d1d4a3ce-64b1-5f1a-9ba4-7e7e69966f35"
 version = "0.1.8"
-
-[[deps.BufferedStreams]]
-git-tree-sha1 = "4ae47f9a4b1dc19897d3743ff13685925c5202ec"
-uuid = "e1450e63-4bb3-523b-b2a4-4ffa8c0fd77d"
-version = "1.2.1"
 
 [[deps.Bzip2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -247,30 +512,10 @@ git-tree-sha1 = "9c4708e3ed2b799e6124b5673a712dda0b596a9b"
 uuid = "f0e56b4a-5159-44fe-b623-3e5288b988bb"
 version = "2.3.1"
 
-[[deps.ConstructionBase]]
-deps = ["LinearAlgebra"]
-git-tree-sha1 = "c53fc348ca4d40d7b371e71fd52251839080cbc9"
-uuid = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
-version = "1.5.4"
-
-    [deps.ConstructionBase.extensions]
-    ConstructionBaseIntervalSetsExt = "IntervalSets"
-    ConstructionBaseStaticArraysExt = "StaticArrays"
-
-    [deps.ConstructionBase.weakdeps]
-    IntervalSets = "8197267c-284f-5f27-9208-e0e47529a953"
-    StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
-
 [[deps.Contour]]
 git-tree-sha1 = "d05d9e7b7aedff4e5b51a029dced05cfb6125781"
 uuid = "d38c429a-6771-53c6-b99e-75d170b6e991"
 version = "0.6.2"
-
-[[deps.CurveFit]]
-deps = ["LinearAlgebra", "Polynomials"]
-git-tree-sha1 = "9e6f6f6057c5a52566252ebceac0eef9c09ad33c"
-uuid = "5a033b19-8c74-5913-a970-47c3779ef25c"
-version = "0.6.0"
 
 [[deps.DataAPI]]
 git-tree-sha1 = "abe83f3a2f1b857aac70ef8b269080af17764bbe"
@@ -379,10 +624,6 @@ git-tree-sha1 = "aa31987c2ba8704e23c6c8ba8a4f769d5d7e4f91"
 uuid = "559328eb-81f9-559d-9380-de523a88c83c"
 version = "1.0.10+0"
 
-[[deps.Future]]
-deps = ["Random"]
-uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
-
 [[deps.GLFW_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Xorg_libXcursor_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll"]
 git-tree-sha1 = "ff38ba61beff76b8f4acad8ab0c97ef73bb670cb"
@@ -413,11 +654,6 @@ git-tree-sha1 = "e94c92c7bf4819685eb80186d51c43e71d4afa17"
 uuid = "7746bdde-850d-59dc-9ae8-88ece973131d"
 version = "2.76.5+0"
 
-[[deps.Glob]]
-git-tree-sha1 = "97285bbd5230dd766e9ef6749b80fc617126d496"
-uuid = "c27321d9-0574-5035-807b-f59d2c89b15c"
-version = "1.3.1"
-
 [[deps.Graphite2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "344bf40dcab1073aca04aa0df4fb092f920e4011"
@@ -428,24 +664,6 @@ version = "1.3.14+0"
 git-tree-sha1 = "53bb909d1151e57e2484c3d1b53e19552b887fb2"
 uuid = "42e2da0e-8278-4e71-bc24-59509adca0fe"
 version = "1.0.2"
-
-[[deps.HDF5]]
-deps = ["Compat", "HDF5_jll", "Libdl", "MPIPreferences", "Mmap", "Preferences", "Printf", "Random", "Requires", "UUIDs"]
-git-tree-sha1 = "26407bd1c60129062cec9da63dc7d08251544d53"
-uuid = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
-version = "0.17.1"
-
-    [deps.HDF5.extensions]
-    MPIExt = "MPI"
-
-    [deps.HDF5.weakdeps]
-    MPI = "da04e1cc-30fd-572f-bb4f-1f8673147195"
-
-[[deps.HDF5_jll]]
-deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "LazyArtifacts", "LibCURL_jll", "Libdl", "MPICH_jll", "MPIPreferences", "MPItrampoline_jll", "MicrosoftMPI_jll", "OpenMPI_jll", "OpenSSL_jll", "TOML", "Zlib_jll", "libaec_jll"]
-git-tree-sha1 = "e4591176488495bf44d7456bd73179d87d5e6eab"
-uuid = "0234f1f7-429e-5d53-9886-15a909be8d59"
-version = "1.14.3+1"
 
 [[deps.HTTP]]
 deps = ["Base64", "CodecZlib", "ConcurrentUtilities", "Dates", "ExceptionUnwrapping", "Logging", "LoggingExtras", "MbedTLS", "NetworkOptions", "OpenSSL", "Random", "SimpleBufferStream", "Sockets", "URIs", "UUIDs"]
@@ -649,35 +867,11 @@ git-tree-sha1 = "c1dd6d7978c12545b4179fb6153b9250c96b0075"
 uuid = "e6f89c97-d47a-5376-807f-9c37f3926c36"
 version = "1.0.3"
 
-[[deps.MAT]]
-deps = ["BufferedStreams", "CodecZlib", "HDF5", "SparseArrays"]
-git-tree-sha1 = "ed1cf0a322d78cee07718bed5fd945e2218c35a1"
-uuid = "23992714-dd62-5051-b70f-ba57cb901cac"
-version = "0.10.6"
-
 [[deps.MKL_jll]]
 deps = ["Artifacts", "IntelOpenMP_jll", "JLLWrappers", "LazyArtifacts", "Libdl"]
 git-tree-sha1 = "72dc3cf284559eb8f53aa593fe62cb33f83ed0c0"
 uuid = "856f044c-d86e-5d09-b602-aeab76dc8ba7"
 version = "2024.0.0+0"
-
-[[deps.MPICH_jll]]
-deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "MPIPreferences", "TOML"]
-git-tree-sha1 = "2ee75365ca243c1a39d467e35ffd3d4d32eef11e"
-uuid = "7cb0a576-ebde-5e09-9194-50597f1243b4"
-version = "4.1.2+1"
-
-[[deps.MPIPreferences]]
-deps = ["Libdl", "Preferences"]
-git-tree-sha1 = "8f6af051b9e8ec597fa09d8885ed79fd582f33c9"
-uuid = "3da0fdf6-3ccc-4f1b-acd9-58baa6c99267"
-version = "0.1.10"
-
-[[deps.MPItrampoline_jll]]
-deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "MPIPreferences", "TOML"]
-git-tree-sha1 = "8eeb3c73bbc0ca203d0dc8dad4008350bbe5797b"
-uuid = "f1f71cc9-e9ae-5b93-9b94-4fe0e1ad3748"
-version = "5.3.1+1"
 
 [[deps.MacroTools]]
 deps = ["Markdown", "Random"]
@@ -704,12 +898,6 @@ version = "2.28.2+1"
 git-tree-sha1 = "c13304c81eec1ed3af7fc20e75fb6b26092a1102"
 uuid = "442fdcdd-2543-5da2-b0f3-8c86c306513e"
 version = "0.3.2"
-
-[[deps.MicrosoftMPI_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "b01beb91d20b0d1312a9471a36017b5b339d26de"
-uuid = "9237b28f-5490-5468-be7b-bb81f5f5e6cf"
-version = "10.1.4+1"
 
 [[deps.Missings]]
 deps = ["DataAPI"]
@@ -749,12 +937,6 @@ version = "0.3.23+4"
 deps = ["Artifacts", "Libdl"]
 uuid = "05823500-19ac-5b8b-9628-191a04bc5112"
 version = "0.8.1+2"
-
-[[deps.OpenMPI_jll]]
-deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "MPIPreferences", "TOML"]
-git-tree-sha1 = "e25c1778a98e34219a00455d6e4384e017ea9762"
-uuid = "fe0851c0-eecd-5654-98d4-656369965a5c"
-version = "4.1.6+0"
 
 [[deps.OpenSSL]]
 deps = ["BitFlags", "Dates", "MozillaCACerts_jll", "OpenSSL_jll", "Sockets"]
@@ -838,24 +1020,6 @@ version = "1.40.1"
     ImageInTerminal = "d8c32880-2388-543b-8c61-d9f865259254"
     Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
-[[deps.Polynomials]]
-deps = ["LinearAlgebra", "RecipesBase", "Setfield", "SparseArrays"]
-git-tree-sha1 = "a9c7a523d5ed375be3983db190f6a5874ae9286d"
-uuid = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
-version = "4.0.6"
-
-    [deps.Polynomials.extensions]
-    PolynomialsChainRulesCoreExt = "ChainRulesCore"
-    PolynomialsFFTWExt = "FFTW"
-    PolynomialsMakieCoreExt = "MakieCore"
-    PolynomialsMutableArithmeticsExt = "MutableArithmetics"
-
-    [deps.Polynomials.weakdeps]
-    ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-    FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
-    MakieCore = "20f20a25-4f0e-4fdf-b5d1-57303727442b"
-    MutableArithmetics = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
-
 [[deps.PrecompileTools]]
 deps = ["Preferences"]
 git-tree-sha1 = "03b4c25b43cb84cee5c90aa9b5ea0a78fd848d2f"
@@ -928,12 +1092,6 @@ version = "1.2.1"
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 
-[[deps.Setfield]]
-deps = ["ConstructionBase", "Future", "MacroTools", "StaticArraysCore"]
-git-tree-sha1 = "e2cc6d8c88613c05e1defb55170bf5ff211fbeac"
-uuid = "efcf1570-3423-57d1-acb7-fd33fddbac46"
-version = "1.1.1"
-
 [[deps.Showoff]]
 deps = ["Dates", "Grisu"]
 git-tree-sha1 = "91eddf657aca81df9ae6ceb20b959ae5653ad1de"
@@ -958,11 +1116,6 @@ version = "1.2.1"
 deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 version = "1.10.0"
-
-[[deps.StaticArraysCore]]
-git-tree-sha1 = "36b3d696ce6366023a0ea192b4cd442268995a0d"
-uuid = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
-version = "1.4.2"
 
 [[deps.Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
@@ -1267,12 +1420,6 @@ git-tree-sha1 = "3516a5630f741c9eecb3720b1ec9d8edc3ecc033"
 uuid = "1a1c6b14-54f6-533d-8383-74cd7377aa70"
 version = "3.1.1+0"
 
-[[deps.libaec_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "eddd19a8dea6b139ea97bdc8a0e2667d4b661720"
-uuid = "477f73a3-ac25-53e9-8cc3-50b2fa2566f0"
-version = "1.0.6+1"
-
 [[deps.libaom_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "3a2ea60308f0996d26f1e5354e10c24e9ef905d4"
@@ -1356,13 +1503,35 @@ version = "1.4.1+1"
 """
 
 # ╔═╡ Cell order:
-# ╟─d9035536-cad7-11ee-27c7-bb6200dca19f
-# ╠═a182e1a3-81d8-474f-8186-081e789dd271
-# ╠═464c6799-51ad-442b-bc38-1272297ff7b3
-# ╠═effd28d3-9a18-4241-9a1d-292c876385ae
-# ╟─01f1b4b4-3b55-4c0d-af3d-3a128062164e
-# ╠═9389d4cd-3ac6-4352-9315-f488387d29b2
-# ╟─f9d1c1e5-f76d-4af4-af79-29f170199a0d
-# ╠═83e1dcac-9291-4bc7-bbbf-36bf9f7fa9c5
+# ╟─6036be53-637b-4029-8357-7ba1a78d63da
+# ╠═d82606fe-e0d5-11ee-3087-73ae9d1c8537
+# ╟─04db5ac0-3a9f-4b14-91ff-cdd499c692d4
+# ╟─236557c9-2c84-45a4-b605-6c3f1fce750c
+# ╠═8e9e4950-b5c3-4e03-b33b-30a91767a773
+# ╠═954adca0-c269-4c0a-af14-cbc1ce1ddcd2
+# ╠═07151a33-78d7-4643-9660-34eddd6defdf
+# ╠═65f27a3a-507f-4b73-8813-f43681141380
+# ╟─44934b1a-e67f-4599-881e-e41f48c73db7
+# ╠═24d12d28-1d09-435c-9549-c0bedbe80823
+# ╠═5ced682b-d29e-4791-b648-7324c2d9a9c0
+# ╠═687af890-4539-43fb-a15b-d83e6b7bb248
+# ╠═372ff12b-ebe1-425a-99f8-9bb228d43771
+# ╟─880e8891-409a-4459-8f20-818cc19873f6
+# ╠═083a43bf-aca7-4249-b4ab-c003d4973259
+# ╠═5c58a075-2305-41e2-a062-13347dc63abc
+# ╠═9ed84da8-35cd-4ed8-888d-c7324ebc751e
+# ╠═394a8067-1ac4-4f33-b4ec-068c3b74cf20
+# ╠═6615abc0-c070-41a7-a483-eee9adb76a92
+# ╟─d898d9a9-ce17-4ef4-8b8a-a0733013d1bb
+# ╠═d637474b-efc6-4bfb-907e-4996051e9272
+# ╠═59b6e6d5-450e-48ab-80a9-8c0831ea435c
+# ╠═cadf6942-3f96-43c5-ad4d-0b4a3751751c
+# ╠═1052b08d-f7d1-4d78-bd7d-ce66dcd88ce5
+# ╟─d1f0b8b8-8b16-4533-a421-32ad12a2168d
+# ╠═9994a4fa-7d98-4e73-a995-5d134f5f365f
+# ╠═7392643a-6f36-43c4-94e8-c6047ca367bc
+# ╠═16e92b7c-2dad-4a99-b83d-f21d34a272b8
+# ╠═5176d4d1-f401-4a0a-a368-63dda586d7ce
+# ╠═6091a4be-ca67-474c-bd4e-bcd979e7442b
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

@@ -136,7 +136,7 @@ Plots = "~1.40.1"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.10.1"
+julia_version = "1.10.2"
 manifest_format = "2.0"
 project_hash = "28e0625bdb5b5f3ab650867bb5f5fd0ee0553152"
 
