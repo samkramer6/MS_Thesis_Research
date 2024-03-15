@@ -1,0 +1,89 @@
+%     File: KramerThesisPaper.tex
+%     Created: September 24th, 2023
+%     Author: Samuel Kramer
+
+% Create document class
+\documentclass[doublespace ,nopageskip]{VTthesis} 
+\usepackage[
+backend=biber,
+style=ieee,
+hyperref=false,
+]{biblatex}
+\addbibresource{Thesis Research.bib} %Imports bibliography file
+\usepackage{wrapfig}
+\usepackage{caption}
+\usepackage{amssymb}
+\usepackage{soul}
+
+% =========================================================================
+%                               Title Pages
+% =========================================================================
+
+% Title
+\title{Enhanced Weak Signal Detection Using SVM Based Correlation Algorithm}
+
+    \keywords{Digital Signal Processing, Signal Detection, Engineering Acoustics}
+    
+    \author{Samuel L. Kramer}
+    
+    \program{Mechanical Engineering} 
+
+    \degree{Master of Science} 
+
+    \submitdate{May 1st, 2024} 
+
+% Commitee members
+    \principaladvisor{Dr. Alfred Wicks}
+    \firstreader{Dr. Chris Fuller}
+    \secondreader{Dr. Steve Southward}
+
+% =========================================================================
+%                           Abstract
+% =========================================================================
+
+\dedication{To my parents, who always supported me}
+%\acknowledge{This is where you put your acknowledgments.}
+
+% Abstracts
+\abstract{\input{src/abstract}}
+
+\abstractgenaud{\input{src/genaud_abstract}}
+
+% =========================================================================
+%                           Front Matter
+% =========================================================================
+\begin{document}
+
+    \frontmatter
+    \maketitle
+    \tableofcontents
+    \listoffigures
+    \printnomenclature
+
+% ======================================================================
+%                           Main Matter
+% ======================================================================
+
+\mainmatter
+
+% Chapter 1: Introduction
+\input{src/intro}
+
+% Chapter 2: Review of Lit
+\input{src/background}
+\input{src/svm}
+\input{src/formulation}
+
+% Chatper 3: Results
+\input{src/results}
+
+% Chapter 4: Discussion
+\input{src/discussion}
+
+% Chapter 5: Conclusion
+\input{src/conclusion}
+
+% Biliography
+\printbibliography
+
+\end{document}

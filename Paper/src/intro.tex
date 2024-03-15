@@ -1,0 +1,28 @@
+\chapter{Introduction} \label{ch:introduction}
+    The field of Signal processing has become increasingly important with a continually modernizing society, and is deeply intertwined in many of the electronic products used today. Our phones and computers are laden with image compression algorithms and audio filtering protocols to remove background noise in noise cancellation. Signal processing presents its own set of challenges that remain a large focus of academic research, however these challenges are compounded as signal power worsens. 
+    
+    Weak signal detection theory had its infancy in World War II radar technology that specified optimal observation for detecting electronic signals with random white noise \cite{swets_history_2001}. The field took even further strides in the mid 20th century amid the backdrop of the Cold War. Naval sonar systems positioned to spy on enemy ship movements relied on the ability to capture and detect noise caused by submarines. Modern passive sonar arrays are able to detect ships, reliably determine direction of travel, and the country of origin based off the noise generated from the rotor. The discovery of the Fast Fourier Transform during the cold war allowed American scientists to accurately detect Soviet underground nuclear tests from across the world. 
+    
+    The natural progression of physics and technology has demanded the advancement in signal detection theory, and over time various techniques have evolved for different applications. However, issues still arise when the signal is very short, incoherent, or “weak” comparative to noise. In these situations, classic linear techniques begin to fail proportionately as signal power worsens where many of the underlying assumptions of classic detection theory begin to be violated \cite{deeks_nonlinear_2017}.
+    
+    Modern discoveries have birthed detection methods like new linear and non-linear detection methods as well as the application of Artificial Intelligence to the field \cite{wang_current_2013} \cite{li-xin_weak_2008}. Over the past three decades, significant claims regarding their ability to detect weak signals with very low signal-to-noise ratio have been made. The goal of this thesis is to combine artificial intelligence principles to classical linear signal detection methods, propose an Support Vector Machine (SVM) based cross correlation algorithm, evaluate its performance, and build upon the correlation to other digital signal processing methods.
+
+    \nomenclature{SVM}{Support Vector Machine}
+    
+% Section 2: Thesis Motivation 
+    \section{Motivation} \label{se:motivation}
+        As previously mentioned, most signal processing methods begin to lose effectiveness as the power of noise in the data increases. Data with signal to noise power ratios close to unity typically constitutes a weak signal and it becomes difficult to process. Non-linear methods claim to detect signals in random noise as low as -30dB, where same methods begin to lose performance in the context of colored noise. Artificial intelligence driven and pure SVM methods also have the same issues where performance dramatically falls off with additive deterministic noise. 
+        
+        SVM methods are used to separate out data points for classification, which can be leveraged to elevate the deterministic component out of the noise component for detection. The implementation of SVM kernel methods into a correlation algorithm could have a “best-of-both-worlds” approach where the benefits of SVM can be combined with the cross-correlations ability to template match. This could provide increased ability to detect signals within deterministic and colored noise.
+
+% Section 3: Thesis objective and outline
+    \section{Thesis Objective and Outline} \label{se:objective_outline}
+        The first objective of this thesis is to build the foundational theory and ultimately propose a Support Vector Machine based correlation algorithm. The fundamental theory supporting the plausibility of the use of kernel transformation functions will be evaluated and a comprehensive derivation of the algorithm will be proposed. The algorithm will also be experimentally tested for a performance review and comparison to classical techniques. Lastly, connections will be made to other forms of signal detection methods that build off the correlation algorithm. 
+
+        Chapter 2 is the Review of Literature section and will survey the field of signal processing related to signal detection. This chapter will mainly focus on building the understanding of modern signal detection philosophy and the derivation of the kernel correlation algorithm. 
+        
+        Chapter 3 will outline experimental data sets used, review experimental results, and offer a comparison to modern detection methods.
+        
+        Chapter 4 will be a discussion of the results presented in the previous chapter and draw conclusions on the performance. 
+        
+        Chapter 5 will discuss final thoughts on the work presented and then offer further suggestions for later work.
