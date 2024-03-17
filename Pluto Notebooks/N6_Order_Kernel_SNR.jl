@@ -4,35 +4,29 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ d82606fe-e0d5-11ee-3087-73ae9d1c8537
+# ╔═╡ 8782e2fc-e40a-11ee-117e-c72198fe71c3
 begin
 	using Plots
 	using FFTW
 	using StatsBase
+	using LaTeXStrings
 end
 
-# ╔═╡ 6036be53-637b-4029-8357-7ba1a78d63da
-md"# Background Section Notebook
+# ╔═╡ d92c5c04-abde-4ee2-8526-deffa612b27d
+md"# Order of Kernel vs. SNR
 
-This notebook is dedicated to reproducing the math from the background section that was done in MATLAB into Julia to have access to the better vector graphics for the thesis paper. The examples will mostly be the same.
+This notebook will be on the exploration between a the order of kernel vs. the SNR. It is important to understand what is happening by increasing the oder. 
 
-Sam Kramer
+The theory states that as we increase $n \rightarrow \infty$ then the SNR will also approach $\infty$ assuming that our signal and noise model is additive assumption holds. This will create the amplitude of the data in white noise to be infinitely larger than the amplitude of the noise, thus eliminating the noise from the data.
 
-March 12th, 2024"
+March 17th, 2024"
 
-# ╔═╡ 04db5ac0-3a9f-4b14-91ff-cdd499c692d4
-md"## Signal Generation"
+# ╔═╡ c5d870f8-06f2-451f-b415-fcd811d07a82
+md"## Signal Setup"
 
-# ╔═╡ 236557c9-2c84-45a4-b605-6c3f1fce750c
-md"This section is going to be on generating the following signals:
-
-1. A reference signal that is a simple sinusoid wavelet
-1. A noisy signal with the reference centered at the middle
-1. A linear chirp signal (Swept Frequency Sine Function)
-1. A basic noise vector with no signal"
-
-# ╔═╡ 8e9e4950-b5c3-4e03-b33b-30a91767a773
+# ╔═╡ 87e3dcad-a03a-44bf-ac8c-66ecaef1aa3b
 begin
+
 	# --Basic Signal
 		fs = 10000;
 		T = 1;
@@ -41,404 +35,326 @@ begin
 		time = collect(0:1/fs:T);
 		amplitude = A .* sin.(pi.*time);
 		signal = amplitude .* sin.(f .* 2. * pi .* time);
-
-	# --Plotting
-		signal_plot = plot(time, signal,
-					 	guidefont = (10, "Computer Modern"),
-						tickfont = ("Computer Modern"),
-						ylabel = "Amplitude",
-						titlefont = ("Computer Modern"),
-						label = false,
-						title = "Reference Signal",
-						color = :cadetblue4,
-						linewidth = 1.5)
+		alpha = 2;
+		ns = collect(1:5:201);
 
 	# --Padding the Signal for later use
 		pad = vec(zeros(1, 4*fs));
-		append!(signal, pad)
+		reference = vec([0.0]);
+		append!(reference, signal);
+		popfirst!(reference);
+		append!(reference, pad);
+
+		time_long = 0:1/fs:5;
+
+	# --Params
+		# --Sim 1
+			post_snr = vec([]); 	
 end
 
-# ╔═╡ 954adca0-c269-4c0a-af14-cbc1ce1ddcd2
+# ╔═╡ 901ff2b1-31bd-439a-8058-313f83b971da
+md"## SNR vs. Polynomial Order Simulation"
+
+# ╔═╡ 0e9fbeec-99b8-4a6c-89d6-fd050033016d
 begin
-	# --Long Signal Creation
+	# --plotting
+		plot_scat = scatter(ns, post_snr,
+					xlabel = L"Kernel Polynomial Order $(x^n)$",
+					ylabel = "Signal-to-Noise Ratio (dB)",
+					guidefont = (10, "Computer Modern"),
+					tickfont = (10, "Computer Modern"),
+					label = false,
+					color = :cadetblue,
+					title = "SNR of Transformed Data vs. Kernel Order",
+					titlefont = ("Computer Modern"))
+
+		plot(plot_scat, layout = [1], dpi = 500)
+
+end
+
+# ╔═╡ a7e12d1d-041e-4094-8dff-6b3963419dbc
+md"## Kernel Transformation vs. Pre/Post-SNR"
+
+# ╔═╡ 63b6ca88-d602-4556-bc58-011006b74fa5
+md"## Functions"
+
+# ╔═╡ 6d5233cc-18c5-4a96-a541-86799ca7b41e
+function SNR(signal::Vector{Float64}, noise::Vector{Float64})
+	signal_power = sum(signal.^2) / (2*T*fs);
+	noise_power = sum(noise.^2) / (2*length(noise));
+
+	ratio = signal_power / noise_power;
+
+	SNR = 10*log10.(ratio);
+
+	return SNR::Float64
+end
+
+# ╔═╡ fd9c0442-7919-4c5c-ae48-62bd17d597ed
+function cubic_kernel(x::Vector{Float64})
+	
+	y = (x .* x .+ 1) .^ 3;
+	kx = y .- mean(y);
+
+	return kx::Vector{Float64}
+end
+
+# ╔═╡ a85dee41-0378-4df3-9a1f-8a13f4462a58
+function poly_kernel(x::Vector{Float64}, n::Int)
+	
+	y = (x .+ 1) .^ (n);
+	kx = y .- mean(y);
+
+	return kx::Vector{Float64}
+end
+
+# ╔═╡ 408baec3-b1f5-4f45-a4df-f9ab5c2c47e0
+for i = 1:length(ns)
+	
+	# --Setup
+		n = ns[i];
+
+	# --Create Noisy Signal
 		signal_long = vec(zeros(1, 2*fs));
 		zero_pad2 = signal_long;
 		append!(signal_long, signal);
 		append!(signal_long, zero_pad2);
 		signal_long = signal_long[1:5*fs + 1];
 
-		time_long = collect(0:1/fs:5);
-
-end
-
-# ╔═╡ 44934b1a-e67f-4599-881e-e41f48c73db7
-md"## Cross Correlation Example
-
-This section focuses on the cross-correlation and the cross spectral density calculations and image generation."
-
-# ╔═╡ 687af890-4539-43fb-a15b-d83e6b7bb248
-function cross_correlation(x, y)
-	f_x = fft(x);
-	f_y = fft(y);
-
-	corr = real.(ifft(f_x .* conj(f_y)));
-	corr_out = corr ./ maximum(corr);
-	return corr::Vector{Float64}
-end
-
-# ╔═╡ 372ff12b-ebe1-425a-99f8-9bb228d43771
-function CSD(x, y)
-	f_x = fft(x);
-	f_y = fft(y);
-
-	csd = abs.(f_x .* conj(f_y));
-
-	return csd
-end
-
-# ╔═╡ 880e8891-409a-4459-8f20-818cc19873f6
-md"## Autocorrelation Background Work
-
-This section primarily focuses on work for autocorrelation background info."
-
-# ╔═╡ 394a8067-1ac4-4f33-b4ec-068c3b74cf20
-function autocorrelation(x::Vector{Float64})
-	fx = fft(x);
-
-	corr = real.(ifft(fx .* conj(fx)));
-	corr_out = corr ./ maximum(corr);
-
-	return corr::Vector{Float64}
-end
-
-# ╔═╡ 6615abc0-c070-41a7-a483-eee9adb76a92
-function psd(x::Vector{Float64})
-	fx = fft(x);
-
-	corr = abs.(fx .* conj(fx));
-
-	return corr::Vector{Float64}
-end
-
-# ╔═╡ d898d9a9-ce17-4ef4-8b8a-a0733013d1bb
-md"## KCC Example Image
-
-This section will be the work for the KCC image creation in the thesis paper."
-
-# ╔═╡ 1052b08d-f7d1-4d78-bd7d-ce66dcd88ce5
-function SNR(signal::Vector{Float64}, noise::Vector{Float64})
-	signal_power = sum(signal.^2) / (2*10000);
-	noise_power = sum(noise.^2) / (2*length(noise));
-
-	ratio = signal_power / noise_power;
-
-	SNR = 20*log10.(ratio);
-
-	return SNR::Float64
-end
-
-# ╔═╡ 07151a33-78d7-4643-9660-34eddd6defdf
-begin
-	# --Creating Noisy Signal
-		alpha = 2;
-		rand_values = alpha .* vec(rand(Float64, 1, length(time_long)));
+		rand_values = alpha .* vec(rand(Float64, 1, length(signal_long)));
 		noise = rand_values .- mean(rand_values);
 		noisy_signal = signal_long .+ noise;
 		noisy_signal_demeaned = noisy_signal .- mean(noisy_signal);
-
-	# --Subplot generation
-		noisy_signal_plot = plot(time_long, noisy_signal_demeaned,
-								guidefont = (10, "Computer Modern"),
-								tickfont = ("Computer Modern"),
-								xlabel = "Time (s)",
-								ylabel = "Amplitude",
-								titlefont = ("Computer Modern"),
-								label = false,
-								title = "Noisy Signal",
-								color = :cadetblue4,
-								linewidth = 1.5)
-
-		plot(signal_plot, noisy_signal_plot, layout = [1, 1], dpi = 500)
-
-	# --Calculation of the SNR
-		data_snr = round.(SNR(signal, noise), digits = 3);
-
-	# --Annotation of the SNR
-		annotate!(3.01, 1.01, text("SNR = $(data_snr) dB", :left, :bottom, 9, "Computer Modern"))
 	
-end
-
-# ╔═╡ 65f27a3a-507f-4b73-8813-f43681141380
-begin
-	f_sweep = LinRange(10, 300, fs+1);
-	chirp = sin.(f_sweep .* pi .* time);
-	append!(chirp, pad);
-
-	noisy_chirp = chirp + noise;
-end
-
-# ╔═╡ 5ced682b-d29e-4791-b648-7324c2d9a9c0
-begin
-	csd_example = CSD(noisy_chirp, signal);
-	csd_db = 20 .* log10.(csd_example);
-	frequencies = (0:1/5:fs);
+	# --Transform Data
+		k_noise = poly_kernel(noise, n);
+		k_noisy_signal = poly_kernel(noisy_signal, n);
 	
+	# --Split into Noise and Data
+		k_signal = k_noisy_signal .- k_noise;
 
-	csd_plot = plot(frequencies, csd_db,
-			xlim = (0, 750),
-			ylim = (-100, 130),
-			xtick = 0:50:1000,
-			ytick = -125:25:125,
-			guidefont = (10, "Computer Modern"),
-			tickfont = ("Computer Modern"),
-			titlefont = ("Computer Modern"),
-			label = false,
-			title = "Cross-Spectral Density",
-			color = :cadetblue,
-			dpi = 500,
-			linewidth = 1.5)
+	# --Find SNR of Transformed Data
+		transformed_snr = round.(SNR(k_signal, k_noise), digits = 3,);
+		append!(post_snr, transformed_snr);
 
-	plot(csd_plot)
 end
 
-# ╔═╡ 9ed84da8-35cd-4ed8-888d-c7324ebc751e
-begin
-	psd_example = psd(noisy_chirp);
-	psd_db = 20 .* log10.(psd_example);
+# ╔═╡ 7cd7ab13-1eff-4597-af1f-d62722d58cc0
+function labs_kernel(x::Vector{Float64})
 
-	plot(frequencies, psd_db,
-		xlim = (-1, 750),
-		ylim = (0, 150),
-		xtick = 0:50:1000,
-		ytick = -125:25:150,
-		guidefont = (10, "Computer Modern"),
-		tickfont = ("Computer Modern"),
-		xlabel = "Frequency (Hz)",
-		ylabel = "Amplitude",
-		titlefont = ("Computer Modern"),
-		label = false,
-		title = "Power Spectral Density",
-		color = :cadetblue,
-		dpi = 500,
-		linewidth = 1.5)
-end
-
-# ╔═╡ 24d12d28-1d09-435c-9549-c0bedbe80823
-begin
-	xcorr_example = cross_correlation(noisy_signal, signal);
-
-	xcorr_plot = plot(xcorr_example,
-					guidefont = (10, "Computer Modern"),
-					tickfont = ("Computer Modern"),
-					xlabel = "Lags (\\tau)",
-					ylabel = "Amplitude",
-					titlefont = ("Computer Modern"),
-					label = false,
-					title = "Cross-correlation Output",
-					color = :cadetblue,
-					dpi = 500,
-					linewidth = 1.5)
-end
-
-# ╔═╡ 083a43bf-aca7-4249-b4ab-c003d4973259
-begin
-	# --Create Autocorr Signal with repeated data
-		autocorr_signal = signal .+ signal_long .+ noise;
-		new_signal = autocorr_signal .- mean(autocorr_signal);
-		
-	# --Plots
-		autocorr_data_plot = plot(time_long, new_signal,
-								guidefont = (10, "Computer Modern"),
-								tickfont = ("Computer Modern"),
-								xlabel = "Time (s)",
-								ylabel = "Amplitude",
-								titlefont = ("Computer Modern"),
-								label = false,
-								title = "Noisy Signal",
-								color = :cadetblue4,
-								linewidth = 1.5)
-
-		plot(signal_plot, autocorr_data_plot, layout = [1,1], dpi = 500)
-end
-
-# ╔═╡ 5c58a075-2305-41e2-a062-13347dc63abc
-begin
-	corr_example = autocorrelation(new_signal);
-
-	plot(corr_example,
-		guidefont = (10, "Computer Modern"),
-		tickfont = ("Computer Modern"),
-		xlabel = "Lags (\\tau)",
-		ylabel = "Amplitude",
-		titlefont = ("Computer Modern"),
-		label = false,
-		title = "Autocorrelation Output",
-		color = :cadetblue,
-		dpi = 500,
-		linewidth = 1.5)
-end
-
-# ╔═╡ d1f0b8b8-8b16-4533-a421-32ad12a2168d
-md"## Kernelized Spectral Analysis
-
-This section will be on the generation of the proof of the Kernelized Spectral Analysis usages. We are going to create the graphs for the formulation section."
-
-# ╔═╡ 16e92b7c-2dad-4a99-b83d-f21d34a272b8
-function kernel(x::Vector{Float64})
-	
-	kx = abs.(x + x);
+	y = abs.(x .+ x)
+	kx = y .- mean(y);
 
 	return kx::Vector{Float64}
 end
 
-# ╔═╡ cadf6942-3f96-43c5-ad4d-0b4a3751751c
-function KCC(x::Vector{Float64}, y::Vector{Float64})
-	kx = kernel(x);
-	ky = kernel(y);
+# ╔═╡ 5a2a8440-353e-4e72-bcd5-a0bcbd2f163f
+function rbf_kernel(x::Vector{Float64}, sigma::Any)
 
-	f_kx = fft(kx);
-	f_ky = fft(ky);
+	y = exp.(-1 .* (x .^ 2) ./ (2 * sigma));
+	kx = y .- mean(y);
 
-	corr = real.(ifft(f_kx .* conj(f_ky)));
-	corr_out = corr ./ maximum(corr);
-
-	return corr::Vector{Float64}
+	return kx::Vector{Float64}
 end
 
-# ╔═╡ d637474b-efc6-4bfb-907e-4996051e9272
+# ╔═╡ 11b2edb1-0ffd-4794-ac1f-dc04af61efd3
 begin
-	kcc_corr = KCC(noisy_signal, signal);
+	# --Parameters
+		pre_snr = vec([]); 				
+		post_snr_k1 = vec([]); 		# L-Abs Kernel
+		post_snr_k2 = vec([]); 		# RBF Kernel (sigma = 1)
+		post_snr_k3 = vec([]); 		# RBF Kernel (sigma = 100)
+		post_snr_k4 = vec([]); 		# Cubic Kernel 
+		post_snr_k5 = vec([]); 	  	# Poly (n = 20) 
+		post_snr_k6 = vec([]); 		# Poly (n = 50)
+		post_snr_k7 = vec([]); 		# Poly (n = 100)
+		post_snr_k8 = vec([]);  	# Poly (n = 150)
 
-	kcc_plot = plot(kcc_corr,
-					guidefont = (10, "Computer Modern"),
-					titlefont = ("Computer Modern"),
-					tickfont = ("Computer Modern"),
-					xlabel = "Lags (\\tau)",
-					ylabel = "Amplitude",
-					label = false,
-					title = "Kernel Cross-correlation Output",
-					color = :cadetblue,
-					dpi = 500,
-					linewidth = 1.5)
+		alphas = collect(1:0.25:40);
+		num_sims = 5;
 	
-	vline!([19500, 20500], label = false)
+	for j = 1:length(alphas)
 
-	plot(xcorr_plot, kcc_plot, layout = [1,1], dpi = 500)
+		# --Params
+			a = alphas[j]
+
+		# --Create noisy signal
+			signal_long = vec(zeros(1, 2*fs));
+			zero_pad2 = signal_long;
+			append!(signal_long, signal);
+			append!(signal_long, zero_pad2);
+			signal_long = signal_long[1:5*fs + 1];
+
+			rand_values = a .* vec(rand(Float64, 1, length(signal_long)));
+			noise = rand_values .- mean(rand_values);
+			noisy_signal = signal_long .+ noise;
+			noisy_signal_demeaned = noisy_signal .- mean(noisy_signal);
+
+		# --Calculate Pre-SNR
+			data_snr = round.(SNR(signal, noise), digits = 3);
+			append!(pre_snr, data_snr)
+
+		# --Transform noisy signal
+
+			# --L-Abs Kernel Transformation
+				k_noise_labs = labs_kernel(noise);
+				k_noisy_signal_labs = labs_kernel(noisy_signal);
+
+			# --RBF Kernel Transformation (sigma = 1)
+				k_noise_rbf_1 = rbf_kernel(noise, 1);
+				k_noisy_signal_rbf_1 = rbf_kernel(noisy_signal, 1);
+
+			# --RBF Kernel Transformation (sigma = 100)
+				k_noise_rbf_100 = rbf_kernel(noise, 100);
+				k_noisy_signal_rbf_100 = rbf_kernel(noisy_signal, 100);
+
+			# --Cubic Kernel Transformation
+				k_noise_cubic = cubic_kernel(noise);
+				k_noisy_signal_cubic = cubic_kernel(noisy_signal);
+
+			# --Poly Kernel (n = 20)
+				k_noise_poly_20 = poly_kernel(noise, 21);
+				k_noisy_signal_poly_20 = poly_kernel(noisy_signal, 21);
+
+			# --Poly Kernel (n = 50)
+				k_noise_poly_50 = poly_kernel(noise, 51);
+				k_noisy_signal_poly_50 = poly_kernel(noisy_signal, 51);
+
+			# --Poly Kernel (n = 100)
+				k_noise_poly_100 = poly_kernel(noise, 101);
+				k_noisy_signal_poly_100 = poly_kernel(noisy_signal, 101);
+
+			# --Poly Kernel (n = 150)
+				k_noise_poly_150 = poly_kernel(noise, 121);
+				k_noisy_signal_poly_150 = poly_kernel(noisy_signal, 121);
+
+		# --Split into noise and signal
+			k_signal_labs = k_noisy_signal_labs .- k_noise_labs;
+			k_signal_rbf_1 = k_noisy_signal_rbf_1 .- k_noise_rbf_1;
+			k_signal_rbf_100 = k_noisy_signal_rbf_100 .- k_noise_rbf_100;
+			k_signal_cubic = k_noisy_signal_cubic .- k_noise_cubic;
+			k_signal_poly_20 = k_noisy_signal_poly_20 .- k_noise_poly_20;
+			k_signal_poly_50 = k_noisy_signal_poly_50 .- k_noise_poly_50;
+			k_signal_poly_100 = k_noisy_signal_poly_100 .- k_noise_poly_100;
+			k_signal_poly_150 = k_noisy_signal_poly_150 .- k_noise_poly_150;
+
+		# --Calculate Post-SNR
+			transformed_snr_labs = round.(SNR(k_signal_labs, k_noise_labs), 
+										digits = 3,);
+			transformed_snr_rbf_1 = round.(SNR(k_signal_rbf_1, k_noise_labs), 
+										digits = 3,);
+			transformed_snr_rbf_100 = round.(SNR(k_signal_rbf_100, k_noise_rbf_100), 
+										digits = 3,);
+			transformed_snr_cubic = round.(SNR(k_signal_cubic, k_noise_cubic), 
+										digits = 3,);
+			transformed_snr_poly_20 = round.(SNR(k_signal_poly_20, k_noise_poly_20), 
+										digits = 3,);
+			transformed_snr_poly_50 = round.(SNR(k_signal_poly_50, k_noise_poly_50), 
+										digits = 3,);
+			transformed_snr_poly_100 = round.(
+										SNR(k_signal_poly_100, k_noise_poly_100), 
+										digits = 3);
+			transformed_snr_poly_150 = round.(
+										SNR(k_signal_poly_150, k_noise_poly_150), 
+										digits = 3);
+
+		# --Save Post-SNR
+			append!(post_snr_k1, transformed_snr_labs);
+			append!(post_snr_k2, transformed_snr_rbf_1);
+			append!(post_snr_k3, transformed_snr_rbf_100);
+			append!(post_snr_k4, transformed_snr_cubic);
+			append!(post_snr_k5, transformed_snr_poly_20);
+			append!(post_snr_k6, transformed_snr_poly_50);
+			append!(post_snr_k7, transformed_snr_poly_100);
+			append!(post_snr_k8, transformed_snr_poly_150);
+
+	end
 end
 
-# ╔═╡ c8230e51-91c8-4551-b103-47d89a0fc701
+# ╔═╡ 9cf3cd7b-0244-42f3-80ad-b79c33463cff
 begin
-
-	f_kcc = fft(kcc_corr);
-	f_kcc_mag = abs.(f_kcc);
-	f_kcc_dB = 20 .* log10.(f_kcc_mag);
-
-	plot(frequencies, f_kcc_dB,
-		xlim = (0, 500),
-		xtick = 0:25:1000)
-	
-end
-
-# ╔═╡ 5176d4d1-f401-4a0a-a368-63dda586d7ce
-function KCSD(x::Vector{Float64}, y::Vector{Float64})
-
-	kx = kernel(x);
-	fkx = fft(kx);
-	fy = fft(y);
-
-	kcsd = abs.(fkx .* conj(fy));
-	
-	kcsd_dB = 20 .* log10.(kcsd);
-
-	return kcsd
-end
-
-# ╔═╡ 7392643a-6f36-43c4-94e8-c6047ca367bc
-begin
-	kcsd_dB = KCSD(noisy_chirp, signal);
-
-	kcsd_plot = plot(frequencies, kcsd_dB,
-		xlim = (-1, 300),
-		#ylim = (-125, 500),
-		xtick = 0:25:1000,
-		#ytick = -200:200:3000,
+	plot(pre_snr, pre_snr,
+		xlabel = "Pre-Transformation SNR (dB)",
+		ylabel = "Post-Transformation SNR (dB)",
 		guidefont = (10, "Computer Modern"),
 		tickfont = ("Computer Modern"),
-		xlabel = "Frequency (Hz)",
-		titlefont = ("Computer Modern"),
-		label = false,
-		title = "Kernel Cross-Spectral Density",
-		color = :cadetblue,
+		color = :black,
+		linewidth = 2,
+		label = "1-1 Transformation Boundary",
+		legendfont = "Computer Modern",
 		dpi = 500,
-		linewidth = 1.5)
+		title = "SNR of Data Pre and Post Transformation",
+		titlefont = "Computer Modern",
+		legend = :topleft,
+		xlim = (-25, 5))
 
-	chirp_snr = round.(SNR(chirp, noise), digits = 3);
-	annotate!(77, 20000, text("SNR = $(chirp_snr) dB", :left, :bottom, 9, "Computer Modern"))
+	plot!(pre_snr, post_snr_k1,
+		label = "L-Abs Kernel", 
+		linewidth = 2.5,
+		color = :orange3)
 	
-	plot(kcsd_plot)
+	plot!(pre_snr, post_snr_k4,
+		label = "Cubic kernel",
+		linewidth = 2.5,
+		color = :red3)
+
+	plot!(pre_snr, post_snr_k2,
+		label = L"RBF Kernel $\sigma = 1$",
+		linewidth = 2.5,
+		color = :forestgreen)
+
+	plot!(pre_snr, post_snr_k3,
+		label = L"RBF Kernel $\sigma = 100$",
+		linewidth = 2.5,
+		color = :blue3)
 end
 
-# ╔═╡ 6091a4be-ca67-474c-bd4e-bcd979e7442b
-function KPSD(x::Vector{Float64})
-
-	kx = kernel(x);
-	fkx = fft(kx);
-	fx = fft(x);
-
-	kpsd = abs.(fkx .* conj(fx));
-
-	kpsd_dB = 20 .* log10.(kpsd);
-
-	return kpsd_dB
-end
-
-# ╔═╡ 9994a4fa-7d98-4e73-a995-5d134f5f365f
+# ╔═╡ a213bf87-262f-4829-8f5a-9464a29fa6f9
 begin
-	kpsd_dB = KPSD(noisy_chirp);
-
-	plot(frequencies, kpsd_dB,
-		xlim = (-1, 750),
-		ylim = (-125, 200),
-		xtick = 0:50:1000,
-		ytick = -125:25:200,
+	plot(pre_snr, pre_snr,
+		xlabel = "Pre-Transformation SNR (dB)",
+		ylabel = "Post-Transformation SNR (dB)",
 		guidefont = (10, "Computer Modern"),
 		tickfont = ("Computer Modern"),
-		xlabel = "Frequency (Hz)",
-		ylabel = "Magnitude (dB)",
-		titlefont = ("Computer Modern"),
-		label = false,
-		title = "Kernel Power Spectral Density",
-		color = :cadetblue,
+		color = :black,
+		linewidth = 2,
+		label = "1-1 Transformation Boundary",
+		legendfont = "Computer Modern",
 		dpi = 500,
-		linewidth = 1.5)
-end
+		title = "SNR of Data Pre and Post Transformation",
+		titlefont = "Computer Modern",
+		legend = :topleft,
+		xlim = (-25, 5))
 
-# ╔═╡ 2cacc412-5ae0-4614-9a7e-fb66f885e24d
-md"## False Detection Example"
+	plot!(pre_snr, post_snr_k5,
+		label = L"Polynomial kernel ($n = 20$)",
+		linewidth = 2.5)
 
-# ╔═╡ 1ad9a2f1-3f02-4a7a-ba7b-0a3fb4db5183
-display("The SNR of the sine data is $(data_snr) dB")
+	plot!(pre_snr, post_snr_k6,
+		label = L"Polynomial kernel ($n = 50$)",
+		linewidth = 2.5)
 
-# ╔═╡ 8d87d83e-a9f4-4705-805c-66d15fbfc610
-begin
+	plot!(pre_snr, post_snr_k7,
+		label = L"Polynomial kernel ($n = 100$)",
+		linewidth = 2.5)
 
-	plot(csd_plot, kcsd_plot, layout = [1, 1],
-		xlim = (0, 450),
-		ylabel = "Magnitude (dB)",
-		dpi = 500,
-		xtick = 0:25:450)
-	
+	plot!(pre_snr, post_snr_k8,
+		label = L"Polynomial kernel ($n = 120$)",
+		linewidth = 2.5)
+
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
+LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
 FFTW = "~1.8.0"
+LaTeXStrings = "~1.3.1"
 Plots = "~1.40.1"
 StatsBase = "~0.34.2"
 """
@@ -449,7 +365,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.10.2"
 manifest_format = "2.0"
-project_hash = "ca62a7b84da13693ff5eb68683b3e1c188cc4a3e"
+project_hash = "0ab7125297b5ccfdc315b99b6581e91604333daf"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -1540,38 +1456,22 @@ version = "1.4.1+1"
 """
 
 # ╔═╡ Cell order:
-# ╟─6036be53-637b-4029-8357-7ba1a78d63da
-# ╠═d82606fe-e0d5-11ee-3087-73ae9d1c8537
-# ╟─04db5ac0-3a9f-4b14-91ff-cdd499c692d4
-# ╟─236557c9-2c84-45a4-b605-6c3f1fce750c
-# ╠═8e9e4950-b5c3-4e03-b33b-30a91767a773
-# ╠═954adca0-c269-4c0a-af14-cbc1ce1ddcd2
-# ╠═07151a33-78d7-4643-9660-34eddd6defdf
-# ╠═65f27a3a-507f-4b73-8813-f43681141380
-# ╟─44934b1a-e67f-4599-881e-e41f48c73db7
-# ╠═24d12d28-1d09-435c-9549-c0bedbe80823
-# ╠═5ced682b-d29e-4791-b648-7324c2d9a9c0
-# ╠═687af890-4539-43fb-a15b-d83e6b7bb248
-# ╠═372ff12b-ebe1-425a-99f8-9bb228d43771
-# ╟─880e8891-409a-4459-8f20-818cc19873f6
-# ╠═083a43bf-aca7-4249-b4ab-c003d4973259
-# ╠═5c58a075-2305-41e2-a062-13347dc63abc
-# ╠═9ed84da8-35cd-4ed8-888d-c7324ebc751e
-# ╠═394a8067-1ac4-4f33-b4ec-068c3b74cf20
-# ╠═6615abc0-c070-41a7-a483-eee9adb76a92
-# ╟─d898d9a9-ce17-4ef4-8b8a-a0733013d1bb
-# ╠═d637474b-efc6-4bfb-907e-4996051e9272
-# ╠═c8230e51-91c8-4551-b103-47d89a0fc701
-# ╠═cadf6942-3f96-43c5-ad4d-0b4a3751751c
-# ╠═1052b08d-f7d1-4d78-bd7d-ce66dcd88ce5
-# ╟─d1f0b8b8-8b16-4533-a421-32ad12a2168d
-# ╠═9994a4fa-7d98-4e73-a995-5d134f5f365f
-# ╠═7392643a-6f36-43c4-94e8-c6047ca367bc
-# ╠═16e92b7c-2dad-4a99-b83d-f21d34a272b8
-# ╠═5176d4d1-f401-4a0a-a368-63dda586d7ce
-# ╠═6091a4be-ca67-474c-bd4e-bcd979e7442b
-# ╟─2cacc412-5ae0-4614-9a7e-fb66f885e24d
-# ╠═1ad9a2f1-3f02-4a7a-ba7b-0a3fb4db5183
-# ╠═8d87d83e-a9f4-4705-805c-66d15fbfc610
+# ╟─d92c5c04-abde-4ee2-8526-deffa612b27d
+# ╠═8782e2fc-e40a-11ee-117e-c72198fe71c3
+# ╟─c5d870f8-06f2-451f-b415-fcd811d07a82
+# ╠═87e3dcad-a03a-44bf-ac8c-66ecaef1aa3b
+# ╟─901ff2b1-31bd-439a-8058-313f83b971da
+# ╠═408baec3-b1f5-4f45-a4df-f9ab5c2c47e0
+# ╠═0e9fbeec-99b8-4a6c-89d6-fd050033016d
+# ╟─a7e12d1d-041e-4094-8dff-6b3963419dbc
+# ╠═11b2edb1-0ffd-4794-ac1f-dc04af61efd3
+# ╠═9cf3cd7b-0244-42f3-80ad-b79c33463cff
+# ╠═a213bf87-262f-4829-8f5a-9464a29fa6f9
+# ╟─63b6ca88-d602-4556-bc58-011006b74fa5
+# ╠═6d5233cc-18c5-4a96-a541-86799ca7b41e
+# ╠═fd9c0442-7919-4c5c-ae48-62bd17d597ed
+# ╠═a85dee41-0378-4df3-9a1f-8a13f4462a58
+# ╠═7cd7ab13-1eff-4597-af1f-d62722d58cc0
+# ╠═5a2a8440-353e-4e72-bcd5-a0bcbd2f163f
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
