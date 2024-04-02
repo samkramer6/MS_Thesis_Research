@@ -59,13 +59,13 @@ md"## SNR vs. Polynomial Order Simulation"
 begin
 	# --plotting
 		plot_scat = scatter(ns, post_snr,
-					xlabel = L"Kernel Polynomial Order $(x^n)$",
+					xlabel = L"Kernel Polynomial Degree $(x^n)$",
 					ylabel = "Signal-to-Noise Ratio (dB)",
 					guidefont = (10, "Computer Modern"),
 					tickfont = (10, "Computer Modern"),
 					label = false,
 					color = :cadetblue,
-					title = "SNR of Transformed Data vs. Kernel Order",
+					title = "SNR of Transformed Data vs. Kernel Degree",
 					titlefont = ("Computer Modern"))
 
 		plot(plot_scat, layout = [1], dpi = 500)
@@ -170,7 +170,7 @@ begin
 		post_snr_k7 = vec([]); 		# Poly (n = 100)
 		post_snr_k8 = vec([]);  	# Poly (n = 150)
 
-		alphas = collect(1:0.25:40);
+		alphas = collect(1:0.25:60);
 		num_sims = 5;
 	
 	for j = 1:length(alphas)
@@ -286,7 +286,7 @@ begin
 		title = "SNR of Data Pre and Post Transformation",
 		titlefont = "Computer Modern",
 		legend = :topleft,
-		xlim = (-25, 5))
+		xlim = (-30, 5))
 
 	plot!(pre_snr, post_snr_k1,
 		label = "L-Abs Kernel", 
@@ -307,6 +307,7 @@ begin
 		label = L"RBF Kernel $\sigma = 100$",
 		linewidth = 2.5,
 		color = :blue3)
+
 end
 
 # ╔═╡ a213bf87-262f-4829-8f5a-9464a29fa6f9

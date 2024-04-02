@@ -1,4 +1,4 @@
-function [white_signal, brown_signal, reference, ref_chirp_long, time, w_snr, b_snr, denoised_data] = generate_signals(alpha, beta)
+function [white_signal, brown_signal, reference, ref_chirp_long, time, w_snr, b_snr, denoised_data] = generate_signals(alpha, beta, sigma, delta)
 %
 %   This is a function that is meant to streamline the generation for the
 %   different signals that 
@@ -23,13 +23,13 @@ function [white_signal, brown_signal, reference, ref_chirp_long, time, w_snr, b_
     % --Generate noise
         
         % --White Noise
-            white_data = randi([-1000, 1000], 1, length(denoised_data)) ./ alpha;
+            white_data = sigma .* randi([-100, 100], 1, length(denoised_data)) ./ alpha;
             white_data = white_data - mean(white_data);
 
         % --Brownian Noise
             cn = dsp.ColoredNoise('brown', length(denoised_data));
             brownian_data = cn();
-            brownian_data = brownian_data ./ beta;
+            brownian_data = delta .* 2 .* brownian_data ./ beta;
             brownian_data = [brownian_data - mean(brownian_data)]';
 
     % --Create entire noisy signals

@@ -11,6 +11,8 @@ begin
 	using Glob
 	using CurveFit
 	using FFTW
+	using LaTeXStrings
+	using JLD2
 	gr()
 end
 
@@ -33,7 +35,7 @@ begin
 		W_corr_detection = [0.0];
 	
 	# --Load in mat files
-		mat_file_corr = glob("Raw Data/Correlation Results/*.mat");
+		mat_file_corr = glob("Raw Data/Sim 1/Correlation Results/*.mat");
 		size(mat_file_corr,1)
 
 	for i in range(1, size(mat_file_corr, 1), step = 1)
@@ -79,7 +81,7 @@ begin
 		W_m_detection = [0.0];
 	
 	# --Load in mat files
-		mat_file_matched = glob("Raw Data/Matched Filter Results/*.mat");
+		mat_file_matched = glob("Raw Data/Sim 1/Matched Filter Results/*.mat");
 		size(mat_file_matched,1)
 
 	for i in range(1, size(mat_file_matched, 1), step = 1)
@@ -125,7 +127,7 @@ begin
 		W_cubic_detection = [0.0];
 	
 	# --Load in mat files
-		mat_file_cubic = glob("Raw Data/Cubic Kernel Results/*.mat");
+		mat_file_cubic = glob("Raw Data/Sim 1/Cubic Kernel Results/*.mat");
 
 	for i in range(1, size(mat_file_cubic, 1), step = 1)
 
@@ -170,7 +172,7 @@ begin
 		W_Labs_detection = [0.0];
 
 	# --Load in Mat Data Files
-		mat_file_Labs = glob("Raw Data/LAbs Kernel Results/*.mat");
+		mat_file_Labs = glob("Raw Data/Sim 1/LAbs Kernel Results/*.mat");
 
 	for i in range(1, size(mat_file_Labs, 1), step = 1);
 
@@ -214,7 +216,7 @@ begin
 		W_rbf_detection = [0.0];
 
 	# --Load in Mat Data Files
-		mat_file_rbf = glob("Raw Data/RBF Kernel Results/*.mat");
+		mat_file_rbf = glob("Raw Data/Sim 1/RBF Kernel Results/*.mat");
 
 	for i in range(1, size(mat_file_rbf, 1), step = 1);
 
@@ -242,6 +244,15 @@ begin
 		popfirst!(B_rbf_SNRs);
 		popfirst!(W_rbf_detection);
 		popfirst!(B_rbf_detection);
+	
+end
+
+# ╔═╡ 4a9a882e-3f6f-47e9-8603-c3cb5c000752
+begin
+	file = glob("Raw Data/Sim 2/unused/RBF1_KCC_Results_Sim_2.jld2")
+	data = load(file[1])
+	W_SNR = data["W_SNR"];
+	W_results = data["W_results"];
 end
 
 # ╔═╡ 346865b1-07c9-427c-95af-2d37c6208d42
@@ -254,82 +265,72 @@ begin
 	
 	pW1 = scatter(W_corr_SNRs, W_corr_detection, 
 		label = "Correlation", 
-		title = "Correlation Probability of Detection in White Noise",
-		titlefont = (12, "Computer Modern"),
-		guidefont = (9, "Computer Modern"),
+		title = "Detection Probability in White Noise",
+		titlefont = ("Computer Modern"),
+		guidefont = ("Computer Modern"),
 		xtickfont = (7, "Computer Modern"),
 		legendfont = (7, "Computer Modern"),
-		xticks = -40:2:1,
-		xlims = (-40, 1),
-		ytickfont = (9, "Computer Modern"),
-		marker = :diamond,
-		markersize = 3,
-		color = :cadetblue)
+		xticks = -50:2:1,
+		xlims = (-44, 1),
+		ylims = (-0.1, 1.2),
+		ytickfont = ("Computer Modern"),
+		markersize = 3)
 
 	pw2 = scatter!(W_m_SNRs, W_m_detection,
 		label = "Matched Filter",
-		marker = :diamond,
 		markersize = 3,
 		color = :red)
 
 	pw3 = scatter!(W_cubic_SNRs, W_cubic_detection,
 		label = "Cubic Kernel",
-		marker = :diamond,
 		markersize = 3,
-		color = :orange)
+		color = :orange2)
 
 	pw4 = scatter!(W_Labs_SNRs, W_Labs_detection,
 		label = "L-Abs Kernel",
-		marker = :diamond,
 		markersize = 3,
 		color = :yellow)
 	
-	pw5 = scatter!(W_rbf_SNRs, W_rbf_detection,
-		label = "Gaussian Kernel",
-		marker = :diamond,
+	pw5 = scatter!(W_SNR, W_results,
+		label = L"Gaussian Kernel $(\sigma = 1)$",
 		markersize = 3,
 		color = :purple)
 
 	pB1 = scatter(B_corr_SNRs, B_corr_detection, 
 		xlabel = "SNR (dB)", 
-		label = "Correlation", 
-		title = "Correlation Probability of Detection in Brownian Noise",
-		titlefont = (12, "Computer Modern"),
-		guidefont = (9, "Computer Modern"),
+		label = false, 
+		title = "Detection Probability in Brownian Noise",
+		titlefont = ("Computer Modern"),
+		guidefont = ("Computer Modern"),
 		xtickfont = (7, "Computer Modern"),
 		legendfont = (7, "Computer Modern"),
-		xticks = -40:2:1,
-		xlims = (-40, 1),
-		ytickfont = (9, "Computer Modern"),
-		marker = :diamond,
-		markersize = 3,
-		color = :cadetblue)
+		xticks = -50:2:1,
+		xlims = (-44, 1),
+		ylims = (-0.1, 1.2),
+		ytickfont = ("Computer Modern"),
+		markersize = 3)
 
 	pB4 = scatter!(B_m_SNRs, B_m_detection,
-		label = "Matched Filter",
-		marker = :diamond,
+		label = false,
 		markersize = 3,
 		color = :red)
 
 	pB3 = scatter!(B_cubic_SNRs, B_cubic_detection,
-		label = "Cubic Kernel",
-		marker = :diamond,
+		label = false,
 		markersize = 3,
-		color = :orange)
+		color = :orange2)
 
 	pB2 = scatter!(B_Labs_SNRs, B_Labs_detection,
-		label = "L-Abs Kernel",
-		marker = :diamond,
+		label = false,
 		markersize = 3,
 		color = :yellow)
 
 	pB5 = scatter!(B_rbf_SNRs, B_rbf_detection,
-		label = "Gaussian Kernel",
-		marker = :diamond,
+		label = false,
 		markersize = 3,
 		color = :purple)
 
-	plot(pW1, pB1, layout = [1, 1], ylabel = "Probability of Detection", dpi = 500)
+	plot(pW1, pB1, layout = [1, 1], ylabel = "Detection Probability", dpi = 500)
 	
 end
 
@@ -345,6 +346,8 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 CurveFit = "5a033b19-8c74-5913-a970-47c3779ef25c"
 FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
 Glob = "c27321d9-0574-5035-807b-f59d2c89b15c"
+JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 MAT = "23992714-dd62-5051-b70f-ba57cb901cac"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 
@@ -352,6 +355,8 @@ Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 CurveFit = "~0.6.0"
 FFTW = "~1.8.0"
 Glob = "~1.3.1"
+JLD2 = "~0.4.45"
+LaTeXStrings = "~1.3.1"
 MAT = "~0.10.6"
 Plots = "~1.40.1"
 """
@@ -362,7 +367,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.10.2"
 manifest_format = "2.0"
-project_hash = "92b4c062a6ecc4686da1ac8d87c3229001929a0a"
+project_hash = "55831e5a7b1f5d214e5e8a0582f2f01552bda3f7"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -566,6 +571,12 @@ git-tree-sha1 = "c6033cc3892d0ef5bb9cd29b7f2f0331ea5184ea"
 uuid = "f5851436-0d7a-5f13-b9de-f02708fd171a"
 version = "3.3.10+0"
 
+[[deps.FileIO]]
+deps = ["Pkg", "Requires", "UUIDs"]
+git-tree-sha1 = "c5c28c245101bd59154f649e19b038d15901b5dc"
+uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
+version = "1.16.2"
+
 [[deps.FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
@@ -693,6 +704,12 @@ uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 git-tree-sha1 = "630b497eafcc20001bba38a4651b327dcfc491d2"
 uuid = "92d709cd-6900-40b7-9082-c6be49f344b6"
 version = "0.2.2"
+
+[[deps.JLD2]]
+deps = ["FileIO", "MacroTools", "Mmap", "OrderedCollections", "Pkg", "PrecompileTools", "Printf", "Reexport", "Requires", "TranscodingStreams", "UUIDs"]
+git-tree-sha1 = "7c0008f0b7622c6c0ee5c65cbc667b69f8a65672"
+uuid = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+version = "0.4.45"
 
 [[deps.JLFzf]]
 deps = ["Pipe", "REPL", "Random", "fzf_jll"]
@@ -1588,6 +1605,7 @@ version = "1.4.1+1"
 # ╠═59be6676-69ce-4307-a28e-80b692437601
 # ╟─76ff36f3-bddf-4e27-987e-452be21147c3
 # ╠═c467ba7b-8829-4e69-80ec-56ff86d98a25
+# ╠═4a9a882e-3f6f-47e9-8603-c3cb5c000752
 # ╟─346865b1-07c9-427c-95af-2d37c6208d42
 # ╠═3a50df09-4d2a-4ad4-b838-429b72de6a85
 # ╠═808c374d-09b0-4982-9990-07eb3512a605

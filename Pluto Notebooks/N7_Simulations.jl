@@ -4,442 +4,310 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ d82606fe-e0d5-11ee-3087-73ae9d1c8537
+# ╔═╡ ffd27b42-c63e-4ef9-8f03-c2861f7540e2
 begin
 	using Plots
 	using FFTW
 	using StatsBase
+	using LaTeXStrings
+	using MAT
+	using JLD2
+	using SignalAnalysis
 end
 
-# ╔═╡ 6036be53-637b-4029-8357-7ba1a78d63da
-md"# Background Section Notebook
+# ╔═╡ 5e1ee716-e4c4-11ee-0f85-491ad20f56ff
+md"# Simulation Notebook
 
-This notebook is dedicated to reproducing the math from the background section that was done in MATLAB into Julia to have access to the better vector graphics for the thesis paper. The examples will mostly be the same.
+This notebook is going to be used to help verify simulation results and create simulation results as well.
 
-Sam Kramer
+March 17th, 2024
+"
 
-March 12th, 2024"
+# ╔═╡ 09e88712-d96c-4cf4-a316-7823ab76c551
+md"## Basic Signal Creation"
 
-# ╔═╡ 04db5ac0-3a9f-4b14-91ff-cdd499c692d4
-md"## Signal Generation"
-
-# ╔═╡ 236557c9-2c84-45a4-b605-6c3f1fce750c
-md"This section is going to be on generating the following signals:
-
-1. A reference signal that is a simple sinusoid wavelet
-1. A noisy signal with the reference centered at the middle
-1. A linear chirp signal (Swept Frequency Sine Function)
-1. A basic noise vector with no signal"
-
-# ╔═╡ 8e9e4950-b5c3-4e03-b33b-30a91767a773
-begin
+# ╔═╡ cbade4ff-1173-4611-b0ad-7a6f0b5247b1
+begin 
+	
 	# --Basic Signal
 		fs = 10000;
 		T = 1;
-		f = 25;
+		f = 50;
 		A = 1;
 		time = collect(0:1/fs:T);
 		amplitude = A .* sin.(pi.*time);
 		signal = amplitude .* sin.(f .* 2. * pi .* time);
+		ns = collect(1:5:201);
+
+	# --Create Reference Signal
+		pad = vec(zeros(1, 2*fs));
+		reference = vcat(signal, pad, pad);
+		time_long = 0:1/fs:5;
+
+	# --Creating denoised signal
+		denoised_signal = vcat(pad, signal, pad);
 
 	# --Plotting
-		signal_plot = plot(time, signal,
-					 	guidefont = (10, "Computer Modern"),
-						tickfont = ("Computer Modern"),
-						ylabel = "Amplitude",
-						titlefont = ("Computer Modern"),
-						label = false,
-						title = "Reference Signal",
-						color = :cadetblue4,
-						linewidth = 1.5)
-
-	# --Padding the Signal for later use
-		pad = vec(zeros(1, 4*fs));
-		append!(signal, pad)
+		p1 = plot(time_long, denoised_signal, 
+				label = false,
+				title = "Denoised Signal")
+		p2 = plot(time_long, reference,
+				label = false,
+				title = "Reference Signal",
+				xlabel = "Time (s)")
+		plot(p1, p2, layout = [1, 1])
+	
 end
 
-# ╔═╡ 954adca0-c269-4c0a-af14-cbc1ce1ddcd2
+# ╔═╡ ba6d0076-2f27-4566-b5e4-57a9d729736d
+md"## Simulation Parameters"
+
+# ╔═╡ f4cebdd4-535a-46c8-9462-9d00586c96ba
+# RUN THIS BLOCK FOR SIM
 begin
-	# --Long Signal Creation
-		signal_long = vec(zeros(1, 2*fs));
-		zero_pad2 = signal_long;
-		append!(signal_long, signal);
-		append!(signal_long, zero_pad2);
-		signal_long = signal_long[1:5*fs + 1];
 
-		time_long = collect(0:1/fs:5);
+	#--Simulation Parameters
+		num_sims = 500;
+		alphas = collect(2:1:125);
+		betas = LinRange(7.5, 0.1, length(alphas));
 
+	# -- White Noise Sim
+		W_SNR = vec([]);
+		W_results = vec([]);
+
+		R_SNR = vec([]);
+		R_results = vec([]);
+	
 end
 
-# ╔═╡ 44934b1a-e67f-4599-881e-e41f48c73db7
-md"## Cross Correlation Example
+# ╔═╡ 0a8b916e-ccd6-40a3-8916-35b78bda228b
+md"## Simulation Body"
 
-This section focuses on the cross-correlation and the cross spectral density calculations and image generation."
+# ╔═╡ 75647723-204b-4b51-9b12-c7923c8709ca
+# ╠═╡ disabled = true
+#=╠═╡
+@save "RBF100_KCC_Results_Sim_3.jld2" W_SNR W_results R_SNR R_results
+  ╠═╡ =#
 
-# ╔═╡ 687af890-4539-43fb-a15b-d83e6b7bb248
-function cross_correlation(x, y)
-	f_x = fft(x);
-	f_y = fft(y);
+# ╔═╡ 1d32efde-a70e-4f2b-80a0-e9b574679c90
+md"## Simulation Results"
 
-	corr = real.(ifft(f_x .* conj(f_y)));
-	corr_out = corr ./ maximum(corr);
-	return corr::Vector{Float64}
+# ╔═╡ 1f28a294-8106-44b2-9307-7816b56d0555
+begin
+	
+	p5 = scatter(W_SNR, W_results,
+		ylabel = "Probability of Detection",
+		title = "Probability of Detection in White Noise",
+		guidefont = "Computer Modern",
+		tickfont = "Computer Modern",
+		titlefont = "Computer Modern",
+		xlim = (-56, 1),
+		label = false,
+		dpi = 500,
+		color = :cadetblue)
+
+	p6 = scatter(R_SNR, R_results,
+		xlabel = "SNR (dB)",
+		ylabel = "Probability of Detection",
+		title = "Probability of Detection in Brownian Noise",
+		guidefont = "Computer Modern",
+		tickfont = "Computer Modern",
+		titlefont = "Computer Modern",
+		xlim = (-56, 1),
+		label = false,
+		dpi = 500,
+		color = :cadetblue)
+
+	plot(p5, p6, layout = [1, 1], xtick = -60:5:10)
+	
 end
 
-# ╔═╡ 372ff12b-ebe1-425a-99f8-9bb228d43771
-function CSD(x, y)
-	f_x = fft(x);
-	f_y = fft(y);
+# ╔═╡ a1fe0af5-cd3d-42e0-8a20-ba3bce68939f
+md"## Function Definitions"
 
-	csd = abs.(f_x .* conj(f_y));
-
-	return csd
-end
-
-# ╔═╡ 880e8891-409a-4459-8f20-818cc19873f6
-md"## Autocorrelation Background Work
-
-This section primarily focuses on work for autocorrelation background info."
-
-# ╔═╡ 394a8067-1ac4-4f33-b4ec-068c3b74cf20
-function autocorrelation(x::Vector{Float64})
-	fx = fft(x);
-
-	corr = real.(ifft(fx .* conj(fx)));
-	corr_out = corr ./ maximum(corr);
-
-	return corr::Vector{Float64}
-end
-
-# ╔═╡ 6615abc0-c070-41a7-a483-eee9adb76a92
-function psd(x::Vector{Float64})
-	fx = fft(x);
-
-	corr = abs.(fx .* conj(fx));
-
-	return corr::Vector{Float64}
-end
-
-# ╔═╡ d898d9a9-ce17-4ef4-8b8a-a0733013d1bb
-md"## KCC Example Image
-
-This section will be the work for the KCC image creation in the thesis paper."
-
-# ╔═╡ 1052b08d-f7d1-4d78-bd7d-ce66dcd88ce5
+# ╔═╡ 660f52b1-b10e-4348-a7d9-edaef791b817
 function SNR(signal::Vector{Float64}, noise::Vector{Float64})
-	signal_power = sum(signal.^2) / (2*10000);
+	signal_power = sum(signal.^2) / (2*T*fs);
 	noise_power = sum(noise.^2) / (2*length(noise));
 
 	ratio = signal_power / noise_power;
 
-	SNR = 20*log10.(ratio);
+	SNR_dB = 10*log10.(ratio);
+
+	SNR = round.(SNR_dB, digits = 3,);
 
 	return SNR::Float64
 end
 
-# ╔═╡ 07151a33-78d7-4643-9660-34eddd6defdf
-begin
-	# --Creating Noisy Signal
-		alpha = 2;
-		rand_values = alpha .* vec(rand(Float64, 1, length(time_long)));
-		noise = rand_values .- mean(rand_values);
-		noisy_signal = signal_long .+ noise;
-		noisy_signal_demeaned = noisy_signal .- mean(noisy_signal);
-
-	# --Subplot generation
-		noisy_signal_plot = plot(time_long, noisy_signal_demeaned,
-								guidefont = (10, "Computer Modern"),
-								tickfont = ("Computer Modern"),
-								xlabel = "Time (s)",
-								ylabel = "Amplitude",
-								titlefont = ("Computer Modern"),
-								label = false,
-								title = "Noisy Signal",
-								color = :cadetblue4,
-								linewidth = 1.5)
-
-		plot(signal_plot, noisy_signal_plot, layout = [1, 1], dpi = 500)
-
-	# --Calculation of the SNR
-		data_snr = round.(SNR(signal, noise), digits = 3);
-
-	# --Annotation of the SNR
-		annotate!(3.01, 1.01, text("SNR = $(data_snr) dB", :left, :bottom, 9, "Computer Modern"))
+# ╔═╡ 43c9539c-e86f-410b-8cfe-440c12c7e9e5
+function cubic_kernel(x::Vector{Float64})
 	
-end
-
-# ╔═╡ 65f27a3a-507f-4b73-8813-f43681141380
-begin
-	f_sweep = LinRange(10, 300, fs+1);
-	chirp = sin.(f_sweep .* pi .* time);
-	append!(chirp, pad);
-
-	noisy_chirp = chirp + noise;
-end
-
-# ╔═╡ 5ced682b-d29e-4791-b648-7324c2d9a9c0
-begin
-	csd_example = CSD(noisy_chirp, signal);
-	csd_db = 20 .* log10.(csd_example);
-	frequencies = (0:1/5:fs);
-	
-
-	csd_plot = plot(frequencies, csd_db,
-			xlim = (0, 750),
-			ylim = (-100, 130),
-			xtick = 0:50:1000,
-			ytick = -125:25:125,
-			guidefont = (10, "Computer Modern"),
-			tickfont = ("Computer Modern"),
-			titlefont = ("Computer Modern"),
-			label = false,
-			title = "Cross-Spectral Density",
-			color = :cadetblue,
-			dpi = 500,
-			linewidth = 1.5)
-
-	plot(csd_plot)
-end
-
-# ╔═╡ c8230e51-91c8-4551-b103-47d89a0fc701
-begin
-	k_signal = (signal .+ 1) .^ 11
-	f_kcc = fft(k_signal);
-	f_kcc_mag = abs.(f_kcc);
-	f_kcc_dB = 20 .* log10.(f_kcc_mag);
-
-	plot(frequencies, f_kcc_dB,
-		xlim = (0, 500),
-		xtick = 0:25:1000)
-	
-end
-
-# ╔═╡ 9ed84da8-35cd-4ed8-888d-c7324ebc751e
-begin
-	psd_example = psd(noisy_chirp);
-	psd_db = 20 .* log10.(psd_example);
-
-	plot(frequencies, psd_db,
-		xlim = (-1, 750),
-		ylim = (0, 150),
-		xtick = 0:50:1000,
-		ytick = -125:25:150,
-		guidefont = (10, "Computer Modern"),
-		tickfont = ("Computer Modern"),
-		xlabel = "Frequency (Hz)",
-		ylabel = "Amplitude",
-		titlefont = ("Computer Modern"),
-		label = false,
-		title = "Power Spectral Density",
-		color = :cadetblue,
-		dpi = 500,
-		linewidth = 1.5)
-end
-
-# ╔═╡ 24d12d28-1d09-435c-9549-c0bedbe80823
-begin
-	xcorr_example = cross_correlation(noisy_signal, signal);
-
-	xcorr_plot = plot(xcorr_example,
-					guidefont = (10, "Computer Modern"),
-					tickfont = ("Computer Modern"),
-					xlabel = "Lags (\\tau)",
-					ylabel = "Amplitude",
-					titlefont = ("Computer Modern"),
-					label = false,
-					title = "Cross-correlation Output",
-					color = :cadetblue,
-					dpi = 500,
-					linewidth = 1.5)
-end
-
-# ╔═╡ 083a43bf-aca7-4249-b4ab-c003d4973259
-begin
-	# --Create Autocorr Signal with repeated data
-		autocorr_signal = signal .+ signal_long .+ noise;
-		new_signal = autocorr_signal .- mean(autocorr_signal);
-		
-	# --Plots
-		autocorr_data_plot = plot(time_long, new_signal,
-								guidefont = (10, "Computer Modern"),
-								tickfont = ("Computer Modern"),
-								xlabel = "Time (s)",
-								ylabel = "Amplitude",
-								titlefont = ("Computer Modern"),
-								label = false,
-								title = "Noisy Signal",
-								color = :cadetblue4,
-								linewidth = 1.5)
-
-		plot(signal_plot, autocorr_data_plot, layout = [1,1], dpi = 500)
-end
-
-# ╔═╡ 5c58a075-2305-41e2-a062-13347dc63abc
-begin
-	corr_example = autocorrelation(new_signal);
-
-	plot(corr_example,
-		guidefont = (10, "Computer Modern"),
-		tickfont = ("Computer Modern"),
-		xlabel = "Lags (\\tau)",
-		ylabel = "Amplitude",
-		titlefont = ("Computer Modern"),
-		label = false,
-		title = "Autocorrelation Output",
-		color = :cadetblue,
-		dpi = 500,
-		linewidth = 1.5)
-end
-
-# ╔═╡ d1f0b8b8-8b16-4533-a421-32ad12a2168d
-md"## Kernelized Spectral Analysis
-
-This section will be on the generation of the proof of the Kernelized Spectral Analysis usages. We are going to create the graphs for the formulation section."
-
-# ╔═╡ 16e92b7c-2dad-4a99-b83d-f21d34a272b8
-function kernel(x::Vector{Float64})
-	
-	kx = abs.(x + x);
+	y = (x .* x .+ 1) .^ 3;
+	kx = y .- mean(y);
 
 	return kx::Vector{Float64}
 end
 
-# ╔═╡ cadf6942-3f96-43c5-ad4d-0b4a3751751c
+# ╔═╡ 146da149-9025-41de-8da1-2ea7ecbf2819
+function poly_kernel(x::Vector{Float64}, n::Int)
+	
+	y = (x .+ 1) .^ (n);
+	kx = y .- mean(y);
+
+	return kx::Vector{Float64}
+end
+
+# ╔═╡ 25b49186-2d34-4828-ac04-bf349c8a0159
+function labs_kernel(x::Vector{Float64})
+
+	y = abs.(x .+ x)
+	kx = y .- mean(y);
+
+	return kx::Vector{Float64}
+end
+
+# ╔═╡ 54b23677-f854-4bc1-8292-8d597ca62031
+function rbf_kernel(x::Vector{Float64})
+
+	sigma = 100;
+	y = exp.(-1 .* (x .^ 2) ./ (2 * sigma));
+	kx = y .- mean(y);
+
+	return kx::Vector{Float64}
+end
+
+# ╔═╡ 94a2c309-8e6b-45e5-a8b3-c2e080bf4bca
 function KCC(x::Vector{Float64}, y::Vector{Float64})
-	kx = kernel(x);
-	ky = kernel(y);
 
-	f_kx = fft(kx);
-	f_ky = fft(ky);
-
-	corr = real.(ifft(f_kx .* conj(f_ky)));
-	corr_out = corr ./ maximum(corr);
-
-	return corr::Vector{Float64}
-end
-
-# ╔═╡ d637474b-efc6-4bfb-907e-4996051e9272
-begin
-	kcc_corr = KCC(noisy_signal, signal);
-
-	kcc_plot = plot(kcc_corr,
-					guidefont = (10, "Computer Modern"),
-					titlefont = ("Computer Modern"),
-					tickfont = ("Computer Modern"),
-					xlabel = "Lags (\\tau)",
-					ylabel = "Amplitude",
-					label = false,
-					title = "Kernel Cross-correlation Output",
-					color = :cadetblue,
-					dpi = 500,
-					linewidth = 1.5)
+	# --Find Kernel
+		kx = rbf_kernel(x);
+		ky = rbf_kernel(y);
 	
-	vline!([19500, 20500], label = false)
+	# --Find FFT of kernel
+		fkx = fft(kx);
+		fky = fft(ky);
+		
+	# --Find Correlation
+		kcorr = real.(ifft(fkx .* conj(fky)));
+		kcorr_normalized = kcorr ./ maximum(kcorr);
 
-	plot(xcorr_plot, kcc_plot, layout = [1,1], dpi = 500)
+	return kcorr_normalized::Vector{Float64}
 end
 
-# ╔═╡ 5176d4d1-f401-4a0a-a368-63dda586d7ce
-function KCSD(x::Vector{Float64}, y::Vector{Float64})
+# ╔═╡ 1abf9e00-c7bf-486b-a789-f4412b905f11
+# DO NOT DIRECTLY RUN THIS BLOCK FOR SIM RESULTS, RUN ABOVE BLOCK
+for i = 1:length(alphas)
 
-	kx = kernel(x);
-	fkx = fft(kx);
-	fy = fft(y);
-
-	kcsd = abs.(fkx .* conj(fy));
+	# --Setup loop
+		alpha = alphas[i];
+		beta = betas[i];
 	
-	kcsd_dB = 20 .* log10.(kcsd);
+		W_detection = vec([]);
+		W_data_SNR = vec([]);
 
-	return kcsd
+		R_detection = vec([]);
+		R_data_SNR = vec([]);
+
+	for j = 1:num_sims
+
+		##############################################################
+		# 						White Noise Sim 					 #
+		##############################################################
+
+		# --Create White noisy signal
+			rand_values = alpha .* vec(rand(Float64, 1, length(denoised_signal))) ./ beta;
+			white_noise = rand_values .- mean(rand_values);
+			white_noise_data = denoised_signal .+ white_noise;
+
+		# --Calculate and save SNR
+			noisy_data_SNR = SNR(denoised_signal, white_noise);
+			append!(W_data_SNR, noisy_data_SNR)
+
+		# --Correlation
+			global W_corr = KCC(white_noise_data, reference);
+
+		# --Test if peak is in right spot
+			max_corr = findall(x -> x == 1, W_corr);
+			append!(W_detection, (abs.(max_corr .- 2*fs) .<= 1000))
+
+		##############################################################
+		# 						Red Noise Sim 						 #
+		##############################################################
+
+		# --Create Red noisy signal
+			rand_values_red = alpha .* 0.25 .* 	vec(rand(RedGaussian(length(denoised_signal)))) ./ (beta);
+			red_noise = rand_values_red .- mean(rand_values_red);
+			red_noise_data = denoised_signal .+ red_noise;
+
+		# --Calculate and Save SNR
+			r_noisy_data_SNR = SNR(denoised_signal, red_noise);
+			append!(R_data_SNR, r_noisy_data_SNR)
+
+		# --Correlation
+			global R_corr = KCC(red_noise_data, reference);
+
+		# --Test if peak is in the right spot
+			R_max_corr = findall(x -> x == 1, R_corr);
+			append!(R_detection, (abs.(max_corr .- 2*fs) .<= 1000))
+
+	end
+		
+
+	# --Average results
+		append!(W_SNR, mean(W_data_SNR));
+		append!(W_results, mean(W_detection));
+
+		append!(R_SNR, mean(R_data_SNR));
+		append!(R_results, mean(R_detection));
+
 end
 
-# ╔═╡ 7392643a-6f36-43c4-94e8-c6047ca367bc
+# ╔═╡ c622a5a9-c25a-42dc-882d-ceb88734f475
 begin
-	kcsd_dB = KCSD(noisy_chirp, signal);
+	p3 = plot(W_corr, title = "White Noise Correlation")
+	vline!([21000])
+	vline!([19000])
 
-	kcsd_plot = plot(frequencies, kcsd_dB,
-		xlim = (-1, 300),
-		#ylim = (-125, 500),
-		xtick = 0:25:1000,
-		#ytick = -200:200:3000,
-		guidefont = (10, "Computer Modern"),
-		tickfont = ("Computer Modern"),
-		xlabel = "Frequency (Hz)",
-		titlefont = ("Computer Modern"),
-		label = false,
-		title = "Kernel Cross-Spectral Density",
-		color = :cadetblue,
-		dpi = 500,
-		linewidth = 1.5)
+	p4 = plot(R_corr, title = "Brownian Noise Correlation")
+	vline!([21000])
+	vline!([19000])
 
-	chirp_snr = round.(SNR(chirp, noise), digits = 3);
-	annotate!(77, 20000, text("SNR = $(chirp_snr) dB", :left, :bottom, 9, "Computer Modern"))
-	
-	plot(kcsd_plot)
+	plot(p3, p4, layout = [1, 1])
+
 end
 
-# ╔═╡ 6091a4be-ca67-474c-bd4e-bcd979e7442b
-function KPSD(x::Vector{Float64})
+# ╔═╡ 92ad4112-d155-44a3-bc37-f66a283f9995
+function correlation(x::Vector{Float64}, y::Vector{Float64})
 
-	kx = kernel(x);
-	fkx = fft(kx);
-	fx = fft(x);
+	# --Find fft
+		fx = fft(x);
+		fy = fft(y);
 
-	kpsd = abs.(fkx .* conj(fx));
+	# --Find Correlation
+		corr = real.(ifft(fx .* conj(fy)));
+		corr_normalized = corr ./ maximum(corr);
 
-	kpsd_dB = 20 .* log10.(kpsd);
-
-	return kpsd_dB
-end
-
-# ╔═╡ 9994a4fa-7d98-4e73-a995-5d134f5f365f
-begin
-	kpsd_dB = KPSD(noisy_chirp);
-
-	plot(frequencies, kpsd_dB,
-		xlim = (-1, 750),
-		ylim = (-125, 200),
-		xtick = 0:50:1000,
-		ytick = -125:25:200,
-		guidefont = (10, "Computer Modern"),
-		tickfont = ("Computer Modern"),
-		xlabel = "Frequency (Hz)",
-		ylabel = "Magnitude (dB)",
-		titlefont = ("Computer Modern"),
-		label = false,
-		title = "Kernel Power Spectral Density",
-		color = :cadetblue,
-		dpi = 500,
-		linewidth = 1.5)
-end
-
-# ╔═╡ 2cacc412-5ae0-4614-9a7e-fb66f885e24d
-md"## False Detection Example"
-
-# ╔═╡ 1ad9a2f1-3f02-4a7a-ba7b-0a3fb4db5183
-display("The SNR of the sine data is $(data_snr) dB")
-
-# ╔═╡ 8d87d83e-a9f4-4705-805c-66d15fbfc610
-begin
-
-	plot(csd_plot, kcsd_plot, layout = [1, 1],
-		xlim = (0, 450),
-		ylabel = "Magnitude (dB)",
-		dpi = 500,
-		xtick = 0:25:450)
-	
+	return corr_normalized::Vector{Float64}
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
+JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
+MAT = "23992714-dd62-5051-b70f-ba57cb901cac"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+SignalAnalysis = "df1fea92-c066-49dd-8b36-eace3378ea47"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
 FFTW = "~1.8.0"
+JLD2 = "~0.4.45"
+LaTeXStrings = "~1.3.1"
+MAT = "~0.10.6"
 Plots = "~1.40.1"
+SignalAnalysis = "~0.6.0"
 StatsBase = "~0.34.2"
 """
 
@@ -449,7 +317,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.10.2"
 manifest_format = "2.0"
-project_hash = "ca62a7b84da13693ff5eb68683b3e1c188cc4a3e"
+project_hash = "e9b27ebff18c326059c11c4f4d3256c202a6f151"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -465,9 +333,43 @@ version = "1.5.0"
     ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
     Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
+[[deps.Adapt]]
+deps = ["LinearAlgebra", "Requires"]
+git-tree-sha1 = "0fb305e0253fd4e833d486914367a2ee2c2e78d0"
+uuid = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
+version = "4.0.1"
+
+    [deps.Adapt.extensions]
+    AdaptStaticArraysExt = "StaticArrays"
+
+    [deps.Adapt.weakdeps]
+    StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
 version = "1.1.1"
+
+[[deps.ArrayInterface]]
+deps = ["Adapt", "LinearAlgebra", "Requires", "SparseArrays", "SuiteSparse"]
+git-tree-sha1 = "bbec08a37f8722786d87bedf84eae19c020c4efa"
+uuid = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
+version = "7.7.0"
+
+    [deps.ArrayInterface.extensions]
+    ArrayInterfaceBandedMatricesExt = "BandedMatrices"
+    ArrayInterfaceBlockBandedMatricesExt = "BlockBandedMatrices"
+    ArrayInterfaceCUDAExt = "CUDA"
+    ArrayInterfaceGPUArraysCoreExt = "GPUArraysCore"
+    ArrayInterfaceStaticArraysCoreExt = "StaticArraysCore"
+    ArrayInterfaceTrackerExt = "Tracker"
+
+    [deps.ArrayInterface.weakdeps]
+    BandedMatrices = "aae01518-5342-5314-be14-df237901396f"
+    BlockBandedMatrices = "ffab5731-97b5-5995-9138-79e8c1846df0"
+    CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+    GPUArraysCore = "46192b85-c4d5-4398-a991-12ede77f4527"
+    StaticArraysCore = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
+    Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
@@ -475,10 +377,21 @@ uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
+[[deps.BenchmarkTools]]
+deps = ["JSON", "Logging", "Printf", "Profile", "Statistics", "UUIDs"]
+git-tree-sha1 = "f1f03a9fa24271160ed7e73051fba3c1a759b53f"
+uuid = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+version = "1.4.0"
+
 [[deps.BitFlags]]
 git-tree-sha1 = "2dc09997850d68179b69dafb58ae806167a32b1b"
 uuid = "d1d4a3ce-64b1-5f1a-9ba4-7e7e69966f35"
 version = "0.1.8"
+
+[[deps.BufferedStreams]]
+git-tree-sha1 = "4ae47f9a4b1dc19897d3743ff13685925c5202ec"
+uuid = "e1450e63-4bb3-523b-b2a4-4ffa8c0fd77d"
+version = "1.2.1"
 
 [[deps.Bzip2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -491,6 +404,18 @@ deps = ["Artifacts", "Bzip2_jll", "CompilerSupportLibraries_jll", "Fontconfig_jl
 git-tree-sha1 = "4b859a208b2397a7a623a03449e4636bdb17bcf2"
 uuid = "83423d85-b0ee-5818-9007-b63ccbeb887a"
 version = "1.16.1+1"
+
+[[deps.Calculus]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "f641eb0a4f00c343bbc32346e1217b86f3ce9dad"
+uuid = "49dc2e85-a5d0-5ad3-a950-438e2897f1b9"
+version = "0.5.1"
+
+[[deps.CodecBzip2]]
+deps = ["Bzip2_jll", "Libdl", "TranscodingStreams"]
+git-tree-sha1 = "9b1ca1aa6ce3f71b3d1840c538a8210a043625eb"
+uuid = "523fee87-0ab8-5b00-afb7-3ecf72e48cfd"
+version = "0.8.2"
 
 [[deps.CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
@@ -515,18 +440,22 @@ deps = ["ColorTypes", "FixedPointNumbers", "LinearAlgebra", "Requires", "Statist
 git-tree-sha1 = "a1f44953f2382ebb937d60dafbe2deea4bd23249"
 uuid = "c3611d14-8923-5661-9e6a-0046d554d3a4"
 version = "0.10.0"
+weakdeps = ["SpecialFunctions"]
 
     [deps.ColorVectorSpace.extensions]
     SpecialFunctionsExt = "SpecialFunctions"
-
-    [deps.ColorVectorSpace.weakdeps]
-    SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
 [[deps.Colors]]
 deps = ["ColorTypes", "FixedPointNumbers", "Reexport"]
 git-tree-sha1 = "fc08e5930ee9a4e03f84bfb5211cb54e7769758a"
 uuid = "5ae59095-9a9b-59fe-a467-6f913c188581"
 version = "0.12.10"
+
+[[deps.CommonSubexpressions]]
+deps = ["MacroTools", "Test"]
+git-tree-sha1 = "7b8a93dba8af7e3b42fecabf646260105ac373f7"
+uuid = "bbf7d656-a473-5ed7-a52c-81e309532950"
+version = "0.3.0"
 
 [[deps.Compat]]
 deps = ["TOML", "UUIDs"]
@@ -549,10 +478,30 @@ git-tree-sha1 = "9c4708e3ed2b799e6124b5673a712dda0b596a9b"
 uuid = "f0e56b4a-5159-44fe-b623-3e5288b988bb"
 version = "2.3.1"
 
+[[deps.ConstructionBase]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "c53fc348ca4d40d7b371e71fd52251839080cbc9"
+uuid = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
+version = "1.5.4"
+
+    [deps.ConstructionBase.extensions]
+    ConstructionBaseIntervalSetsExt = "IntervalSets"
+    ConstructionBaseStaticArraysExt = "StaticArrays"
+
+    [deps.ConstructionBase.weakdeps]
+    IntervalSets = "8197267c-284f-5f27-9208-e0e47529a953"
+    StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+
 [[deps.Contour]]
 git-tree-sha1 = "d05d9e7b7aedff4e5b51a029dced05cfb6125781"
 uuid = "d38c429a-6771-53c6-b99e-75d170b6e991"
 version = "0.6.2"
+
+[[deps.DSP]]
+deps = ["Compat", "FFTW", "IterTools", "LinearAlgebra", "Polynomials", "Random", "Reexport", "SpecialFunctions", "Statistics"]
+git-tree-sha1 = "f7f4319567fe769debfcf7f8c03d8da1dd4e2fb0"
+uuid = "717857b8-e6f2-59f4-9121-6e50c889abd2"
+version = "0.7.9"
 
 [[deps.DataAPI]]
 git-tree-sha1 = "abe83f3a2f1b857aac70ef8b269080af17764bbe"
@@ -575,6 +524,38 @@ git-tree-sha1 = "9e2f36d3c96a820c678f2f1f1782582fcf685bae"
 uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 version = "1.9.1"
 
+[[deps.DiffResults]]
+deps = ["StaticArraysCore"]
+git-tree-sha1 = "782dd5f4561f5d267313f23853baaaa4c52ea621"
+uuid = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
+version = "1.1.0"
+
+[[deps.DiffRules]]
+deps = ["IrrationalConstants", "LogExpFunctions", "NaNMath", "Random", "SpecialFunctions"]
+git-tree-sha1 = "23163d55f885173722d1e4cf0f6110cdbaf7e272"
+uuid = "b552c78f-8df3-52c6-915a-8e097449b14b"
+version = "1.15.1"
+
+[[deps.Distributed]]
+deps = ["Random", "Serialization", "Sockets"]
+uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
+
+[[deps.Distributions]]
+deps = ["FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SpecialFunctions", "Statistics", "StatsAPI", "StatsBase", "StatsFuns"]
+git-tree-sha1 = "7c302d7a5fec5214eb8a5a4c466dcf7a51fcf169"
+uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
+version = "0.25.107"
+
+    [deps.Distributions.extensions]
+    DistributionsChainRulesCoreExt = "ChainRulesCore"
+    DistributionsDensityInterfaceExt = "DensityInterface"
+    DistributionsTestExt = "Test"
+
+    [deps.Distributions.weakdeps]
+    ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+    DensityInterface = "b429d917-457f-4dbc-8f4c-0cc954292b1d"
+    Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
 [[deps.DocStringExtensions]]
 deps = ["LibGit2"]
 git-tree-sha1 = "2fb1e02f2b635d0845df5d7c167fec4dd739b00d"
@@ -585,6 +566,12 @@ version = "0.9.3"
 deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 version = "1.6.0"
+
+[[deps.DualNumbers]]
+deps = ["Calculus", "NaNMath", "SpecialFunctions"]
+git-tree-sha1 = "5837a837389fccf076445fce071c8ddaea35a566"
+uuid = "fa6b7ba4-c1ee-5f82-b5fc-ecf0adba8f74"
+version = "0.6.8"
 
 [[deps.EpollShim_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
@@ -628,8 +615,42 @@ git-tree-sha1 = "c6033cc3892d0ef5bb9cd29b7f2f0331ea5184ea"
 uuid = "f5851436-0d7a-5f13-b9de-f02708fd171a"
 version = "3.3.10+0"
 
+[[deps.FileIO]]
+deps = ["Pkg", "Requires", "UUIDs"]
+git-tree-sha1 = "c5c28c245101bd59154f649e19b038d15901b5dc"
+uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
+version = "1.16.2"
+
 [[deps.FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
+
+[[deps.FillArrays]]
+deps = ["LinearAlgebra", "Random"]
+git-tree-sha1 = "5b93957f6dcd33fc343044af3d48c215be2562f1"
+uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
+version = "1.9.3"
+weakdeps = ["PDMats", "SparseArrays", "Statistics"]
+
+    [deps.FillArrays.extensions]
+    FillArraysPDMatsExt = "PDMats"
+    FillArraysSparseArraysExt = "SparseArrays"
+    FillArraysStatisticsExt = "Statistics"
+
+[[deps.FiniteDiff]]
+deps = ["ArrayInterface", "LinearAlgebra", "Requires", "Setfield", "SparseArrays"]
+git-tree-sha1 = "73d1214fec245096717847c62d389a5d2ac86504"
+uuid = "6a86dc24-6348-571c-b903-95158fe2bd41"
+version = "2.22.0"
+
+    [deps.FiniteDiff.extensions]
+    FiniteDiffBandedMatricesExt = "BandedMatrices"
+    FiniteDiffBlockBandedMatricesExt = "BlockBandedMatrices"
+    FiniteDiffStaticArraysExt = "StaticArrays"
+
+    [deps.FiniteDiff.weakdeps]
+    BandedMatrices = "aae01518-5342-5314-be14-df237901396f"
+    BlockBandedMatrices = "ffab5731-97b5-5995-9138-79e8c1846df0"
+    StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [[deps.FixedPointNumbers]]
 deps = ["Statistics"]
@@ -649,6 +670,18 @@ git-tree-sha1 = "8339d61043228fdd3eb658d86c926cb282ae72a8"
 uuid = "59287772-0a20-5a39-b81b-1366585eb4c0"
 version = "0.4.2"
 
+[[deps.ForwardDiff]]
+deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "LinearAlgebra", "LogExpFunctions", "NaNMath", "Preferences", "Printf", "Random", "SpecialFunctions"]
+git-tree-sha1 = "cf0fe81336da9fb90944683b8c41984b08793dad"
+uuid = "f6369f11-7733-5829-9624-2563aa707210"
+version = "0.10.36"
+
+    [deps.ForwardDiff.extensions]
+    ForwardDiffStaticArraysExt = "StaticArrays"
+
+    [deps.ForwardDiff.weakdeps]
+    StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+
 [[deps.FreeType2_jll]]
 deps = ["Artifacts", "Bzip2_jll", "JLLWrappers", "Libdl", "Zlib_jll"]
 git-tree-sha1 = "d8db6a5a2fe1381c1ea4ef2cab7c69c2de7f9ea0"
@@ -660,6 +693,10 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "aa31987c2ba8704e23c6c8ba8a4f769d5d7e4f91"
 uuid = "559328eb-81f9-559d-9380-de523a88c83c"
 version = "1.0.10+0"
+
+[[deps.Future]]
+deps = ["Random"]
+uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
 
 [[deps.GLFW_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Xorg_libXcursor_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll"]
@@ -702,6 +739,24 @@ git-tree-sha1 = "53bb909d1151e57e2484c3d1b53e19552b887fb2"
 uuid = "42e2da0e-8278-4e71-bc24-59509adca0fe"
 version = "1.0.2"
 
+[[deps.HDF5]]
+deps = ["Compat", "HDF5_jll", "Libdl", "MPIPreferences", "Mmap", "Preferences", "Printf", "Random", "Requires", "UUIDs"]
+git-tree-sha1 = "26407bd1c60129062cec9da63dc7d08251544d53"
+uuid = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
+version = "0.17.1"
+
+    [deps.HDF5.extensions]
+    MPIExt = "MPI"
+
+    [deps.HDF5.weakdeps]
+    MPI = "da04e1cc-30fd-572f-bb4f-1f8673147195"
+
+[[deps.HDF5_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "LazyArtifacts", "LibCURL_jll", "Libdl", "MPICH_jll", "MPIPreferences", "MPItrampoline_jll", "MicrosoftMPI_jll", "OpenMPI_jll", "OpenSSL_jll", "TOML", "Zlib_jll", "libaec_jll"]
+git-tree-sha1 = "e4591176488495bf44d7456bd73179d87d5e6eab"
+uuid = "0234f1f7-429e-5d53-9886-15a909be8d59"
+version = "1.14.3+1"
+
 [[deps.HTTP]]
 deps = ["Base64", "CodecZlib", "ConcurrentUtilities", "Dates", "ExceptionUnwrapping", "Logging", "LoggingExtras", "MbedTLS", "NetworkOptions", "OpenSSL", "Random", "SimpleBufferStream", "Sockets", "URIs", "UUIDs"]
 git-tree-sha1 = "abbbb9ec3afd783a7cbd82ef01dcd088ea051398"
@@ -713,6 +768,12 @@ deps = ["Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll",
 git-tree-sha1 = "129acf094d168394e80ee1dc4bc06ec835e510a3"
 uuid = "2e76f6c2-a576-52d4-95c1-20adfe4de566"
 version = "2.8.1+1"
+
+[[deps.HypergeometricFunctions]]
+deps = ["DualNumbers", "LinearAlgebra", "OpenLibm_jll", "SpecialFunctions"]
+git-tree-sha1 = "f218fe3736ddf977e0e772bc9a586b2383da2685"
+uuid = "34004b35-14d8-5ef3-9330-4cdb6864b03a"
+version = "0.3.23"
 
 [[deps.IntelOpenMP_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
@@ -728,6 +789,17 @@ uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 git-tree-sha1 = "630b497eafcc20001bba38a4651b327dcfc491d2"
 uuid = "92d709cd-6900-40b7-9082-c6be49f344b6"
 version = "0.2.2"
+
+[[deps.IterTools]]
+git-tree-sha1 = "42d5f897009e7ff2cf88db414a389e5ed1bdd023"
+uuid = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
+version = "1.10.0"
+
+[[deps.JLD2]]
+deps = ["FileIO", "MacroTools", "Mmap", "OrderedCollections", "Pkg", "PrecompileTools", "Printf", "Reexport", "Requires", "TranscodingStreams", "UUIDs"]
+git-tree-sha1 = "7c0008f0b7622c6c0ee5c65cbc667b69f8a65672"
+uuid = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+version = "0.4.45"
 
 [[deps.JLFzf]]
 deps = ["Pipe", "REPL", "Random", "fzf_jll"]
@@ -875,6 +947,12 @@ git-tree-sha1 = "7f3efec06033682db852f8b3bc3c1d2b0a0ab066"
 uuid = "38a345b3-de98-5d2b-a5d3-14cd9215e700"
 version = "2.36.0+0"
 
+[[deps.LineSearches]]
+deps = ["LinearAlgebra", "NLSolversBase", "NaNMath", "Parameters", "Printf"]
+git-tree-sha1 = "7bbea35cec17305fc70a0e5b4641477dc0789d9d"
+uuid = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
+version = "7.2.0"
+
 [[deps.LinearAlgebra]]
 deps = ["Libdl", "OpenBLAS_jll", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -904,11 +982,35 @@ git-tree-sha1 = "c1dd6d7978c12545b4179fb6153b9250c96b0075"
 uuid = "e6f89c97-d47a-5376-807f-9c37f3926c36"
 version = "1.0.3"
 
+[[deps.MAT]]
+deps = ["BufferedStreams", "CodecZlib", "HDF5", "SparseArrays"]
+git-tree-sha1 = "ed1cf0a322d78cee07718bed5fd945e2218c35a1"
+uuid = "23992714-dd62-5051-b70f-ba57cb901cac"
+version = "0.10.6"
+
 [[deps.MKL_jll]]
 deps = ["Artifacts", "IntelOpenMP_jll", "JLLWrappers", "LazyArtifacts", "Libdl"]
 git-tree-sha1 = "72dc3cf284559eb8f53aa593fe62cb33f83ed0c0"
 uuid = "856f044c-d86e-5d09-b602-aeab76dc8ba7"
 version = "2024.0.0+0"
+
+[[deps.MPICH_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "MPIPreferences", "TOML"]
+git-tree-sha1 = "2ee75365ca243c1a39d467e35ffd3d4d32eef11e"
+uuid = "7cb0a576-ebde-5e09-9194-50597f1243b4"
+version = "4.1.2+1"
+
+[[deps.MPIPreferences]]
+deps = ["Libdl", "Preferences"]
+git-tree-sha1 = "8f6af051b9e8ec597fa09d8885ed79fd582f33c9"
+uuid = "3da0fdf6-3ccc-4f1b-acd9-58baa6c99267"
+version = "0.1.10"
+
+[[deps.MPItrampoline_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "MPIPreferences", "TOML"]
+git-tree-sha1 = "8eeb3c73bbc0ca203d0dc8dad4008350bbe5797b"
+uuid = "f1f71cc9-e9ae-5b93-9b94-4fe0e1ad3748"
+version = "5.3.1+1"
 
 [[deps.MacroTools]]
 deps = ["Markdown", "Random"]
@@ -919,6 +1021,12 @@ version = "0.5.13"
 [[deps.Markdown]]
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
+
+[[deps.MathOptInterface]]
+deps = ["BenchmarkTools", "CodecBzip2", "CodecZlib", "DataStructures", "ForwardDiff", "JSON", "LinearAlgebra", "MutableArithmetics", "NaNMath", "OrderedCollections", "PrecompileTools", "Printf", "SparseArrays", "SpecialFunctions", "Test", "Unicode"]
+git-tree-sha1 = "8b40681684df46785a0012d352982e22ac3be59e"
+uuid = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
+version = "1.25.2"
 
 [[deps.MbedTLS]]
 deps = ["Dates", "MbedTLS_jll", "MozillaCACerts_jll", "NetworkOptions", "Random", "Sockets"]
@@ -936,6 +1044,18 @@ git-tree-sha1 = "c13304c81eec1ed3af7fc20e75fb6b26092a1102"
 uuid = "442fdcdd-2543-5da2-b0f3-8c86c306513e"
 version = "0.3.2"
 
+[[deps.MetaArrays]]
+deps = ["Requires"]
+git-tree-sha1 = "6647f7d45a9153162d6561957405c12088caf537"
+uuid = "36b8f3f0-b776-11e8-061f-1f20094e1fc8"
+version = "0.2.10"
+
+[[deps.MicrosoftMPI_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "b01beb91d20b0d1312a9471a36017b5b339d26de"
+uuid = "9237b28f-5490-5468-be7b-bb81f5f5e6cf"
+version = "10.1.4+1"
+
 [[deps.Missings]]
 deps = ["DataAPI"]
 git-tree-sha1 = "f66bdc5de519e8f8ae43bdc598782d35a25b1272"
@@ -949,6 +1069,18 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
 version = "2023.1.10"
 
+[[deps.MutableArithmetics]]
+deps = ["LinearAlgebra", "SparseArrays", "Test"]
+git-tree-sha1 = "806eea990fb41f9b36f1253e5697aa645bf6a9f8"
+uuid = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
+version = "1.4.0"
+
+[[deps.NLSolversBase]]
+deps = ["DiffResults", "Distributed", "FiniteDiff", "ForwardDiff"]
+git-tree-sha1 = "a0b464d183da839699f4c79e7606d9d186ec172c"
+uuid = "d41bc354-129a-5804-8e4c-c37616107c6c"
+version = "7.8.3"
+
 [[deps.NaNMath]]
 deps = ["OpenLibm_jll"]
 git-tree-sha1 = "0877504529a3e5c3343c6f8b4c0381e57e4387e4"
@@ -958,6 +1090,15 @@ version = "1.0.2"
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
 version = "1.2.0"
+
+[[deps.OffsetArrays]]
+git-tree-sha1 = "6a731f2b5c03157418a20c12195eb4b74c8f8621"
+uuid = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
+version = "1.13.0"
+weakdeps = ["Adapt"]
+
+    [deps.OffsetArrays.extensions]
+    OffsetArraysAdaptExt = "Adapt"
 
 [[deps.Ogg_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -975,6 +1116,12 @@ deps = ["Artifacts", "Libdl"]
 uuid = "05823500-19ac-5b8b-9628-191a04bc5112"
 version = "0.8.1+2"
 
+[[deps.OpenMPI_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "MPIPreferences", "TOML"]
+git-tree-sha1 = "e25c1778a98e34219a00455d6e4384e017ea9762"
+uuid = "fe0851c0-eecd-5654-98d4-656369965a5c"
+version = "4.1.6+0"
+
 [[deps.OpenSSL]]
 deps = ["BitFlags", "Dates", "MozillaCACerts_jll", "OpenSSL_jll", "Sockets"]
 git-tree-sha1 = "51901a49222b09e3743c65b8847687ae5fc78eb2"
@@ -986,6 +1133,18 @@ deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "60e3045590bd104a16fefb12836c00c0ef8c7f8c"
 uuid = "458c3c95-2e84-50aa-8efc-19380b2a3a95"
 version = "3.0.13+0"
+
+[[deps.OpenSpecFun_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "13652491f6856acfd2db29360e1bbcd4565d04f1"
+uuid = "efe28fd5-8261-553b-a9e1-b2916fc3738e"
+version = "0.5.5+0"
+
+[[deps.Optim]]
+deps = ["Compat", "FillArrays", "ForwardDiff", "LineSearches", "LinearAlgebra", "MathOptInterface", "NLSolversBase", "NaNMath", "Parameters", "PositiveFactorizations", "Printf", "SparseArrays", "StatsBase"]
+git-tree-sha1 = "d024bfb56144d947d4fafcd9cb5cafbe3410b133"
+uuid = "429524aa-4258-5aef-a3af-852621145aeb"
+version = "1.9.2"
 
 [[deps.Opus_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1003,11 +1162,35 @@ deps = ["Artifacts", "Libdl"]
 uuid = "efcefdf7-47ab-520b-bdef-62a2eaa19f15"
 version = "10.42.0+1"
 
+[[deps.PDMats]]
+deps = ["LinearAlgebra", "SparseArrays", "SuiteSparse"]
+git-tree-sha1 = "949347156c25054de2db3b166c52ac4728cbad65"
+uuid = "90014a1f-27ba-587c-ab20-58faa44d9150"
+version = "0.11.31"
+
+[[deps.PaddedViews]]
+deps = ["OffsetArrays"]
+git-tree-sha1 = "0fac6313486baae819364c52b4f483450a9d793f"
+uuid = "5432bcbf-9aad-5242-b902-cca2824c8663"
+version = "0.5.12"
+
+[[deps.Parameters]]
+deps = ["OrderedCollections", "UnPack"]
+git-tree-sha1 = "34c0e9ad262e5f7fc75b10a9952ca7692cfc5fbe"
+uuid = "d96e819e-fc66-5662-9728-84c9c7592b0a"
+version = "0.12.3"
+
 [[deps.Parsers]]
 deps = ["Dates", "PrecompileTools", "UUIDs"]
 git-tree-sha1 = "8489905bcdbcfac64d1daa51ca07c0d8f0283821"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
 version = "2.8.1"
+
+[[deps.Peaks]]
+deps = ["Compat", "RecipesBase"]
+git-tree-sha1 = "1627365757c8b87ad01c2c13e55a5120cbe5b548"
+uuid = "18e31ff7-3703-566c-8e60-38913d67486b"
+version = "0.4.4"
 
 [[deps.Pipe]]
 git-tree-sha1 = "6842804e7867b115ca9de748a0cf6b364523c16d"
@@ -1057,6 +1240,30 @@ version = "1.40.1"
     ImageInTerminal = "d8c32880-2388-543b-8c61-d9f865259254"
     Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
+[[deps.Polynomials]]
+deps = ["LinearAlgebra", "RecipesBase", "Setfield", "SparseArrays"]
+git-tree-sha1 = "a9c7a523d5ed375be3983db190f6a5874ae9286d"
+uuid = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
+version = "4.0.6"
+
+    [deps.Polynomials.extensions]
+    PolynomialsChainRulesCoreExt = "ChainRulesCore"
+    PolynomialsFFTWExt = "FFTW"
+    PolynomialsMakieCoreExt = "MakieCore"
+    PolynomialsMutableArithmeticsExt = "MutableArithmetics"
+
+    [deps.Polynomials.weakdeps]
+    ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+    FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
+    MakieCore = "20f20a25-4f0e-4fdf-b5d1-57303727442b"
+    MutableArithmetics = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
+
+[[deps.PositiveFactorizations]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "17275485f373e6673f7e7f97051f703ed5b15b20"
+uuid = "85a6dd25-e78a-55b7-8502-1745935b8125"
+version = "0.2.4"
+
 [[deps.PrecompileTools]]
 deps = ["Preferences"]
 git-tree-sha1 = "03b4c25b43cb84cee5c90aa9b5ea0a78fd848d2f"
@@ -1073,11 +1280,21 @@ version = "1.4.1"
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
+[[deps.Profile]]
+deps = ["Printf"]
+uuid = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
+
 [[deps.Qt6Base_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Fontconfig_jll", "Glib_jll", "JLLWrappers", "Libdl", "Libglvnd_jll", "OpenSSL_jll", "Vulkan_Loader_jll", "Xorg_libSM_jll", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Xorg_libxcb_jll", "Xorg_xcb_util_cursor_jll", "Xorg_xcb_util_image_jll", "Xorg_xcb_util_keysyms_jll", "Xorg_xcb_util_renderutil_jll", "Xorg_xcb_util_wm_jll", "Zlib_jll", "libinput_jll", "xkbcommon_jll"]
 git-tree-sha1 = "37b7bb7aabf9a085e0044307e1717436117f2b3b"
 uuid = "c0090381-4147-56d7-9ebc-da0b1113ec56"
 version = "6.5.3+1"
+
+[[deps.QuadGK]]
+deps = ["DataStructures", "LinearAlgebra"]
+git-tree-sha1 = "9b23c31e76e333e6fb4c1595ae6afa74966a729e"
+uuid = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
+version = "2.9.4"
 
 [[deps.REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
@@ -1116,6 +1333,18 @@ git-tree-sha1 = "838a3a4188e2ded87a4f9f184b4b0d78a1e91cb7"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
 version = "1.3.0"
 
+[[deps.Rmath]]
+deps = ["Random", "Rmath_jll"]
+git-tree-sha1 = "f65dcb5fa46aee0cf9ed6274ccbd597adc49aa7b"
+uuid = "79098fc4-a85e-5d69-aa6a-4863f24498fa"
+version = "0.7.1"
+
+[[deps.Rmath_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "6ed52fdd3382cf21947b15e8870ac0ddbff736da"
+uuid = "f50d1b31-88e8-58de-be2c-1cc44531875f"
+version = "0.4.0+0"
+
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 version = "0.7.0"
@@ -1129,11 +1358,29 @@ version = "1.2.1"
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 
+[[deps.Setfield]]
+deps = ["ConstructionBase", "Future", "MacroTools", "StaticArraysCore"]
+git-tree-sha1 = "e2cc6d8c88613c05e1defb55170bf5ff211fbeac"
+uuid = "efcf1570-3423-57d1-acb7-fd33fddbac46"
+version = "1.1.1"
+
 [[deps.Showoff]]
 deps = ["Dates", "Grisu"]
 git-tree-sha1 = "91eddf657aca81df9ae6ceb20b959ae5653ad1de"
 uuid = "992d4aef-0814-514b-bc4d-f2e9a6c4116f"
 version = "1.0.3"
+
+[[deps.SignalAnalysis]]
+deps = ["DSP", "Distributions", "DocStringExtensions", "FFTW", "LinearAlgebra", "MetaArrays", "Optim", "PaddedViews", "Peaks", "Random", "Requires", "SignalBase", "Statistics", "WAV"]
+git-tree-sha1 = "d57f40bf531ae2b82549aae0cb20e84331d40333"
+uuid = "df1fea92-c066-49dd-8b36-eace3378ea47"
+version = "0.6.0"
+
+[[deps.SignalBase]]
+deps = ["Unitful"]
+git-tree-sha1 = "14cb05cba5cc89d15e6098e7bb41dcef2606a10a"
+uuid = "00c44e92-20f5-44bc-8f45-a1dcef76ba38"
+version = "0.1.2"
 
 [[deps.SimpleBufferStream]]
 git-tree-sha1 = "874e8867b33a00e784c8a7e4b60afe9e037b74e1"
@@ -1154,6 +1401,23 @@ deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 version = "1.10.0"
 
+[[deps.SpecialFunctions]]
+deps = ["IrrationalConstants", "LogExpFunctions", "OpenLibm_jll", "OpenSpecFun_jll"]
+git-tree-sha1 = "e2cfc4012a19088254b3950b85c3c1d8882d864d"
+uuid = "276daf66-3868-5448-9aa4-cd146d93841b"
+version = "2.3.1"
+
+    [deps.SpecialFunctions.extensions]
+    SpecialFunctionsChainRulesCoreExt = "ChainRulesCore"
+
+    [deps.SpecialFunctions.weakdeps]
+    ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+
+[[deps.StaticArraysCore]]
+git-tree-sha1 = "36b3d696ce6366023a0ea192b4cd442268995a0d"
+uuid = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
+version = "1.4.2"
+
 [[deps.Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
@@ -1170,6 +1434,24 @@ deps = ["DataAPI", "DataStructures", "LinearAlgebra", "LogExpFunctions", "Missin
 git-tree-sha1 = "1d77abd07f617c4868c33d4f5b9e1dbb2643c9cf"
 uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 version = "0.34.2"
+
+[[deps.StatsFuns]]
+deps = ["HypergeometricFunctions", "IrrationalConstants", "LogExpFunctions", "Reexport", "Rmath", "SpecialFunctions"]
+git-tree-sha1 = "f625d686d5a88bcd2b15cd81f18f98186fdc0c9a"
+uuid = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
+version = "1.3.0"
+
+    [deps.StatsFuns.extensions]
+    StatsFunsChainRulesCoreExt = "ChainRulesCore"
+    StatsFunsInverseFunctionsExt = "InverseFunctions"
+
+    [deps.StatsFuns.weakdeps]
+    ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+    InverseFunctions = "3587e190-3f89-42d0-90ee-14403ec27112"
+
+[[deps.SuiteSparse]]
+deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]
+uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 
 [[deps.SuiteSparse_jll]]
 deps = ["Artifacts", "Libdl", "libblastrampoline_jll"]
@@ -1214,6 +1496,11 @@ version = "1.5.1"
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
+[[deps.UnPack]]
+git-tree-sha1 = "387c1f73762231e86e0c9c5443ce3b4a0a9a0c2b"
+uuid = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
+version = "1.0.2"
+
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
@@ -1253,6 +1540,12 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Wayland_jll", "Xorg_libX11_jll", "
 git-tree-sha1 = "2f0486047a07670caad3a81a075d2e518acc5c59"
 uuid = "a44049a8-05dd-5a78-86c9-5fde0876e88c"
 version = "1.3.243+0"
+
+[[deps.WAV]]
+deps = ["Base64", "FileIO", "Libdl", "Logging"]
+git-tree-sha1 = "7e7e1b4686995aaf4ecaaf52f6cd824fa6bd6aa5"
+uuid = "8149f6b0-98f6-5db9-b78f-408fbbb8ef88"
+version = "1.2.0"
 
 [[deps.Wayland_jll]]
 deps = ["Artifacts", "EpollShim_jll", "Expat_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Pkg", "XML2_jll"]
@@ -1457,6 +1750,12 @@ git-tree-sha1 = "3516a5630f741c9eecb3720b1ec9d8edc3ecc033"
 uuid = "1a1c6b14-54f6-533d-8383-74cd7377aa70"
 version = "3.1.1+0"
 
+[[deps.libaec_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "eddd19a8dea6b139ea97bdc8a0e2667d4b661720"
+uuid = "477f73a3-ac25-53e9-8cc3-50b2fa2566f0"
+version = "1.0.6+1"
+
 [[deps.libaom_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "3a2ea60308f0996d26f1e5354e10c24e9ef905d4"
@@ -1540,38 +1839,25 @@ version = "1.4.1+1"
 """
 
 # ╔═╡ Cell order:
-# ╟─6036be53-637b-4029-8357-7ba1a78d63da
-# ╠═d82606fe-e0d5-11ee-3087-73ae9d1c8537
-# ╟─04db5ac0-3a9f-4b14-91ff-cdd499c692d4
-# ╟─236557c9-2c84-45a4-b605-6c3f1fce750c
-# ╠═8e9e4950-b5c3-4e03-b33b-30a91767a773
-# ╠═954adca0-c269-4c0a-af14-cbc1ce1ddcd2
-# ╠═07151a33-78d7-4643-9660-34eddd6defdf
-# ╠═65f27a3a-507f-4b73-8813-f43681141380
-# ╟─44934b1a-e67f-4599-881e-e41f48c73db7
-# ╠═24d12d28-1d09-435c-9549-c0bedbe80823
-# ╠═5ced682b-d29e-4791-b648-7324c2d9a9c0
-# ╠═687af890-4539-43fb-a15b-d83e6b7bb248
-# ╠═372ff12b-ebe1-425a-99f8-9bb228d43771
-# ╟─880e8891-409a-4459-8f20-818cc19873f6
-# ╠═083a43bf-aca7-4249-b4ab-c003d4973259
-# ╠═5c58a075-2305-41e2-a062-13347dc63abc
-# ╠═9ed84da8-35cd-4ed8-888d-c7324ebc751e
-# ╠═394a8067-1ac4-4f33-b4ec-068c3b74cf20
-# ╠═6615abc0-c070-41a7-a483-eee9adb76a92
-# ╟─d898d9a9-ce17-4ef4-8b8a-a0733013d1bb
-# ╠═d637474b-efc6-4bfb-907e-4996051e9272
-# ╠═c8230e51-91c8-4551-b103-47d89a0fc701
-# ╠═cadf6942-3f96-43c5-ad4d-0b4a3751751c
-# ╠═1052b08d-f7d1-4d78-bd7d-ce66dcd88ce5
-# ╟─d1f0b8b8-8b16-4533-a421-32ad12a2168d
-# ╠═9994a4fa-7d98-4e73-a995-5d134f5f365f
-# ╠═7392643a-6f36-43c4-94e8-c6047ca367bc
-# ╠═16e92b7c-2dad-4a99-b83d-f21d34a272b8
-# ╠═5176d4d1-f401-4a0a-a368-63dda586d7ce
-# ╠═6091a4be-ca67-474c-bd4e-bcd979e7442b
-# ╟─2cacc412-5ae0-4614-9a7e-fb66f885e24d
-# ╠═1ad9a2f1-3f02-4a7a-ba7b-0a3fb4db5183
-# ╠═8d87d83e-a9f4-4705-805c-66d15fbfc610
+# ╟─5e1ee716-e4c4-11ee-0f85-491ad20f56ff
+# ╠═ffd27b42-c63e-4ef9-8f03-c2861f7540e2
+# ╟─09e88712-d96c-4cf4-a316-7823ab76c551
+# ╠═cbade4ff-1173-4611-b0ad-7a6f0b5247b1
+# ╟─ba6d0076-2f27-4566-b5e4-57a9d729736d
+# ╠═f4cebdd4-535a-46c8-9462-9d00586c96ba
+# ╟─0a8b916e-ccd6-40a3-8916-35b78bda228b
+# ╠═1abf9e00-c7bf-486b-a789-f4412b905f11
+# ╠═75647723-204b-4b51-9b12-c7923c8709ca
+# ╟─1d32efde-a70e-4f2b-80a0-e9b574679c90
+# ╠═1f28a294-8106-44b2-9307-7816b56d0555
+# ╠═c622a5a9-c25a-42dc-882d-ceb88734f475
+# ╟─a1fe0af5-cd3d-42e0-8a20-ba3bce68939f
+# ╠═660f52b1-b10e-4348-a7d9-edaef791b817
+# ╠═43c9539c-e86f-410b-8cfe-440c12c7e9e5
+# ╠═146da149-9025-41de-8da1-2ea7ecbf2819
+# ╠═25b49186-2d34-4828-ac04-bf349c8a0159
+# ╠═54b23677-f854-4bc1-8292-8d597ca62031
+# ╠═94a2c309-8e6b-45e5-a8b3-c2e080bf4bca
+# ╠═92ad4112-d155-44a3-bc37-f66a283f9995
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
