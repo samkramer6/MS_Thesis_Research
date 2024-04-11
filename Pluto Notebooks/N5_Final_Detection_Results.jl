@@ -255,6 +255,28 @@ begin
 	W_results = data["W_results"];
 end
 
+# ╔═╡ 92b01009-622b-4849-ae3d-0686f1e5a584
+begin
+	file50 = glob("Raw Data/Sim 1/Poly/Poly50_KCC_Simulation.mat")
+	data50 = matread(file50[1])
+	poly50_SNR = data50["W_SNRs"];
+	poly50_results = data50["W_detection"];
+	
+	poly50_SNR_B = data50["B_SNRs"];
+	poly50_results_b = data50["B_detection"];
+end
+
+# ╔═╡ d166f45c-e6e7-487d-aea7-d4273c816899
+begin
+	file100 = glob("Raw Data/Sim 1/Poly/Poly100_KCC_Simulation.mat")
+	data100 = matread(file100[1])
+	poly100_SNR = vec(data100["W_SNRs"]);
+	poly100_results = vec(data100["W_detection"]);
+	
+	poly100_SNR_B = vec(data100["B_SNRs"]);
+	poly100_results_b = vec(data100["B_detection"]);
+end
+
 # ╔═╡ 346865b1-07c9-427c-95af-2d37c6208d42
 md"## Plotting
 
@@ -339,6 +361,59 @@ end
 #=╠═╡
 savefig("detection_simulation_results.pdf")
   ╠═╡ =#
+
+# ╔═╡ 8e754417-46c1-415c-9c4a-fed37ad2df7b
+begin
+	
+	pW12 = scatter(W_corr_SNRs, W_corr_detection, 
+		label = "Correlation", 
+		title = "Detection Probability in White Noise",
+		titlefont = ("Computer Modern"),
+		guidefont = ("Computer Modern"),
+		xtickfont = (7, "Computer Modern"),
+		legendfont = (7, "Computer Modern"),
+		xticks = -50:2:1,
+		xlims = (-50, 1),
+		ylims = (-0.1, 1.2),
+		ytickfont = ("Computer Modern"),
+		markersize = 3)
+
+	pw22 = scatter!(vec(poly50_SNR), vec(poly50_results),
+		label = L"Poly $(n = 50)$",
+		markersize = 3,
+		color = :orange2)
+
+	pw22 = scatter!(poly100_SNR, poly100_results,
+		label = L"Poly $(n = 100)$",
+		markersize = 3,
+		color = :cadetblue)
+
+	pB12 = scatter(B_corr_SNRs, B_corr_detection, 
+		xlabel = "SNR (dB)", 
+		label = false, 
+		title = "Detection Probability in Brownian Noise",
+		titlefont = ("Computer Modern"),
+		guidefont = ("Computer Modern"),
+		xtickfont = (7, "Computer Modern"),
+		legendfont = (7, "Computer Modern"),
+		xticks = -50:2:1,
+		xlims = (-44, 1),
+		ylims = (-0.1, 1.2),
+		ytickfont = ("Computer Modern"),
+		markersize = 3)
+
+	pB22 = scatter!(vec(poly50_SNR_B), vec(poly50_results_b),
+		markersize = 3,
+		label = false,
+		color = :orange2)
+
+	pw22 = scatter!(poly100_SNR_B, poly100_results_b,
+		label = false,
+		markersize = 3,
+		color = :cadetblue)
+
+	plot(pW12, pB12, layout = [1, 1], ylabel = "Detection Probability", dpi = 500)
+end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1606,8 +1681,11 @@ version = "1.4.1+1"
 # ╟─76ff36f3-bddf-4e27-987e-452be21147c3
 # ╠═c467ba7b-8829-4e69-80ec-56ff86d98a25
 # ╠═4a9a882e-3f6f-47e9-8603-c3cb5c000752
+# ╠═92b01009-622b-4849-ae3d-0686f1e5a584
+# ╠═d166f45c-e6e7-487d-aea7-d4273c816899
 # ╟─346865b1-07c9-427c-95af-2d37c6208d42
 # ╠═3a50df09-4d2a-4ad4-b838-429b72de6a85
 # ╠═808c374d-09b0-4982-9990-07eb3512a605
+# ╠═8e754417-46c1-415c-9c4a-fed37ad2df7b
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
