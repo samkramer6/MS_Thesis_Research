@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.38
+# v0.19.40
 
 using Markdown
 using InteractiveUtils
@@ -75,6 +75,39 @@ end
 # ╔═╡ a7e12d1d-041e-4094-8dff-6b3963419dbc
 md"## Kernel Transformation vs. Pre/Post-SNR"
 
+# ╔═╡ 22cb44cf-c4c2-43bd-97d5-e2785f15d4e7
+md"## Simple Large kernel generation"
+
+# ╔═╡ d6adc206-91bb-47e3-8213-a7c5e7ee5138
+# --Make our noisy signal
+begin
+ 	signal_long = vec(zeros(1, 2*fs));
+	zero_pad2 = signal_long;
+	append!(signal_long, signal);
+	append!(signal_long, zero_pad2);
+	signal_long = signal_long[1:5*fs + 1];
+
+	rand_values = alpha .* vec(rand(Float64, 1, length(signal_long)));
+	noise = rand_values .- mean(rand_values);
+	noisy_signal = signal_long .+ noise;
+	noisy_signal_demeaned = noisy_signal .- mean(noisy_signal);
+end
+
+# ╔═╡ 4ad2431e-e8b3-4fcc-b1ba-ac175e54017a
+plotplot2 = plot(noisy_signal_demeaned,
+		guidefont = (10, "Computer Modern"),
+		tickfont = ("Computer Modern"),
+		label = false,
+		color = :cadetblue,
+		linewidth = 1.5,
+		dpi = 500,
+		title = "Original Signal",
+		titlefont = "Computer Modern",
+		legend = :topleft)
+
+# ╔═╡ 04476f0d-903b-469e-b048-1744d9c00c72
+savefig("original_noisy_signal.png")
+
 # ╔═╡ 63b6ca88-d602-4556-bc58-011006b74fa5
 md"## Functions"
 
@@ -138,6 +171,21 @@ for i = 1:length(ns)
 		append!(post_snr, transformed_snr);
 
 end
+
+# ╔═╡ 4e6d12b6-cb85-4584-9f4e-e223ab99206e
+transformed_noisy_signal = poly_kernel(noisy_signal_demeaned, 100);
+
+# ╔═╡ fa0f2594-6558-4c00-b9fa-6b21e25bcfe9
+plotplot = plot(transformed_noisy_signal,
+		guidefont = (10, "Computer Modern"),
+		tickfont = ("Computer Modern"),
+		label = false,
+		color = :cadetblue,
+		linewidth = 1.5,
+		dpi = 500,
+		title = "Large Degree Polynomial Transformation",
+		titlefont = "Computer Modern",
+		legend = :topleft)
 
 # ╔═╡ 7cd7ab13-1eff-4597-af1f-d62722d58cc0
 function labs_kernel(x::Vector{Float64})
@@ -1468,6 +1516,12 @@ version = "1.4.1+1"
 # ╠═11b2edb1-0ffd-4794-ac1f-dc04af61efd3
 # ╠═9cf3cd7b-0244-42f3-80ad-b79c33463cff
 # ╠═a213bf87-262f-4829-8f5a-9464a29fa6f9
+# ╟─22cb44cf-c4c2-43bd-97d5-e2785f15d4e7
+# ╠═d6adc206-91bb-47e3-8213-a7c5e7ee5138
+# ╠═4e6d12b6-cb85-4584-9f4e-e223ab99206e
+# ╠═fa0f2594-6558-4c00-b9fa-6b21e25bcfe9
+# ╠═4ad2431e-e8b3-4fcc-b1ba-ac175e54017a
+# ╠═04476f0d-903b-469e-b048-1744d9c00c72
 # ╟─63b6ca88-d602-4556-bc58-011006b74fa5
 # ╠═6d5233cc-18c5-4a96-a541-86799ca7b41e
 # ╠═fd9c0442-7919-4c5c-ae48-62bd17d597ed
