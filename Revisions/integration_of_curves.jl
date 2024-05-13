@@ -80,9 +80,9 @@ using FiniteDiff
           linewidth = 2);
    
 # --Finding the derivative of the weibull distribution
-    first_derivative = 1 .* (((x .+ 10)./70).^ (λ - 1)) .* exp.(-((x .+ 10)./73) .^ λ);
-    # plot!(xaxis, first_derivative ./ maximum(first_derivative), 
-    #       label = "Weibull Probability Density",
-    #       linewidth = 2)
-    #  
+    first_derivative = 1 .* (((x .+ 10)./65).^ (λ - 1)) .* exp.(-((x .+ 10)./65) .^ λ);
+    plot!(xaxis, first_derivative ./ maximum(first_derivative), 
+          label = "Weibull Probability Density",
+          linewidth = 2)
+     
     savefig("Large Degree Polynomial Curve.pdf")
