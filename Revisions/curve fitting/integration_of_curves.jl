@@ -1,8 +1,14 @@
+#=  integration_of_curves.jl
+    
+    This file will be the work for the weibull fitting and the integration of the weibull
+    into the Gaussian Distributions.
+
+=#
+
 using FFTW
 using Plots
 using JLD2
 using StatsBase
-using FiniteDiff
 
 #READ: Loading in data using the JLD2 file type
 
@@ -14,6 +20,10 @@ using FiniteDiff
     file_data = load("../../Pluto Notebooks/Raw Data/Sim 2/poly100_KCC_Results_Sim_2.jld2");
     SNRs_2 = file_data["W_SNR"];
     detection_2::Vector{Float64} = file_data["W_results"];
+    
+    file_data = load("../../Pluto Notebooks/Raw Data/Sim 2/poly50_KCC_Results_2_Sim_2.jld2"); 
+    SNRs_3::Vector{Float64} = file_data["W_SNR"];
+    detection_3::Vector{Float64} = file_data["W_results"];
 
 # --Plotting Basic Data
     scatter(SNRs, detection, 
@@ -87,12 +97,51 @@ using FiniteDiff
      
     savefig("Large Degree Polynomial Curve.png")
 
+###################################################################################################
+#                                       Curve Fitting 3                                           #
+###################################################################################################
+
+# --Scatter plot 3
+    scatter(SNRs_3, detection_3,
+            label = "Polynomial Kernel Simulation Results",
+            legendfont = "Computer Modern",
+            guidefont = ("Computer Modern"),
+            xlabel = "SNR (dB)",
+            ylabel = "Detection Probability",
+            tickfont = "Computer Modern",
+            title = "SNR Curves and Connection to the Weibull Distribution",
+            titlefont = (12, "Computer Modern"),
+            xlims = (-55,1),
+            dpi = 500,
+            legend = :bottomright)
+     
+    step_size = 0.01;
+    x = 1:step_size:130;
+    λ = 2.5;
+    k = 70;
+    weibull = 1 .- exp.(-((x .+ 10)./k) .^ λ);
+    xaxis = LinRange(-55, 0, length(x));
+
+    plot!(xaxis, weibull, 
+          label = "Weibull Distribution Function (λ = 2.5)",
+          linewidth = 2);
+   
+# --Finding the derivative of the weibull distribution
+    first_derivative = 1 .* (((x .+ 10)./k).^ (λ - 1)) .* exp.(-((x .+ 10)./k) .^ λ);
+    plot!(xaxis, first_derivative ./ maximum(first_derivative), 
+          label = "Weibull Probability Density",
+          linewidth = 2)
+     
+    savefig("Large Degree Polynomial Curve 2.png")
+
+
+
 # --Finding Area under curve
-    function numerical_integral(x, step_size)
+    function numerical_integral(x::AbstractVector, step_size::Float64)
 
         summation = sum(x[1:end - 1] .* step_size); 
          
-        return summation
+        return summation::Float64
     end
 
 # --Finding area under curves
