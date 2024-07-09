@@ -3,15 +3,20 @@
 include("helper_functions.jl")
 
 using BenchmarkTools
+using Plots
+    gr()
+using Timers
 
 ####################################################################################
 
-function main()
+function main(algorithm::String)
 
     # --Parameters
-    α = range(1.0,10.0);
-    β = range(1.0, 10.0, length(α));
-    num_sims = 100;
+    Timers.tic()
+    α = range(2.0, 151.0);
+    num_points = length(α); 
+    β = range(7.5, 0.1 , num_points);
+    num_sims = 2000;
     SNRs::Vector{Float64} = vec(zeros(Bool, 1, length(α)));
     Probabilities::Vector{Float64} = vec(zeros(Float64, 1, length(α)));
 
@@ -27,20 +32,34 @@ function main()
 
         for j in collect(range(1, num_sims)) 
             
-            detection_output::Detection = roll_dice(data, α[i], β[i]);
+            detection_output::Detection = roll_dice(data, α[i], β[i], algorithm);
             
-            SNR_result[j] = detection_output.SNR;
-            detection_result[j] = detection_output.detection[1]; 
+            @inbounds SNR_result[j] = detection_output.SNR;
+            @inbounds detection_result[j] = detection_output.detection[1]; 
 
         end 
         
-        SNRs[i] = mean(SNR_result);
-        Probabilities[i] = mean(detection_result);         
+        @inbounds SNRs[i] = mean(SNR_result);
+        @inbounds Probabilities[i] = mean(detection_result);         
      
     end
 
-    
+    # --Plot
+    plot!(SNRs, Probabilities,
+         ylims = (0, 1),
+         label = algorithm)
+
+    # --Out Statement
+    num_total_sims = num_points * num_sims;
+    println("====== SIM DONE ======")
+    println("Algorithm Used: $algorithm") 
+    println("sims per point = $num_sims")
+    println("Total Sims = $num_total_sims")
+    Timers.toc()
 
 end
 
-@btime main()
+plot()
+main("Cross-Correlation")
+main("Matched Filter")
+savefig("test_output.png")

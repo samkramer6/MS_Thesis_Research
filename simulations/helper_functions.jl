@@ -46,7 +46,7 @@ function populate_signal!(data::Data)
     hann_window = sin.(π .* time) .^ 2;
     signal::Vector{Float64} = vec(hann_window .* sin.(f .* time));
 
-    # --long signal
+    # --Long signal
     signal_long::Vector{Float64} = vec( vcat( vcat(zeros(data.fs, 1), signal), zeros(data.fs, 1) ) ); 
     
     # --Reference signal
@@ -62,11 +62,11 @@ end
 @inline function find_SNR!(data::Data)
 
     # --Find noise and signal power
-    noise_power = sum(data.noise .^ 2) ./ length(data.noise)
-    signal_power = sum(data.signal .^ 2) ./ length(data.signal)
+    @fastmath noise_power = sum(data.noise .^ 2) ./ length(data.noise)
+    @fastmath signal_power = sum(data.signal .^ 2) ./ length(data.signal)
 
     # --Calculate SNR
-    SNR::Float64 = round.(10 .* log10.(signal_power ./ noise_power), digits = 3);
+    @fastmath SNR::Float64 = round.(10 .* log10.(signal_power ./ noise_power), digits = 3);
     data.SNR = SNR;
 
 end
@@ -88,27 +88,32 @@ end
 
 end
 
-@inline function detect_signal(data::Data, known_location)
+@inline function detect_signal(data::Data, known_location::Int64, algorithm::String)
     
     # --Find correlation
-    corr_out = xcorr(data);
-
+    if algorithm == "Cross-Correlation"
+        corr_out = xcorr(data);
+    elseif algorithm == "Matched Filter"
+        corr_out = matched_filter(data);
+    end
+    
     # --Find peak location
     max_location = findall(x -> x == 1, corr_out.correlation);
+    # @show abs.(max_location .- known_location) .<= 100 
     
     # --Store into struct
-    detection_output = Detection(max_location[1], (abs.(max_location .- known_location) .<= 10000), data.SNR); 
-    
+    detection_output = Detection(max_location[1], (abs.(max_location .- known_location) .<= 100), data.SNR); 
+        
     return detection_output::Detection
 end
 
-@inline function roll_dice(data::Data, α, β)
+@inline function roll_dice(data::Data, α, β, algorithm::String)
 
     # --Populate Noise Function
     populate_noise!(data, α, β);
 
     # --Detect location of signal
-    detection_output::Detection = detect_signal(data, data.fs);
+    detection_output::Detection = detect_signal(data, data.fs, algorithm);
 
     return detection_output::Detection 
 end
@@ -119,7 +124,7 @@ end
     
     # --Find correlation
     corr::Vector{Float64} = vec(abs.(ifft( fft(data.noisy_signal) .* conj.(fft(data.ref_signal)) )));
-    corr = corr ./ maximum(corr);
+    @fastmath corr = corr ./ maximum(corr);
 
     # --Store in a new struct which is returned
     output = Corr(data.signal, data.noisy_signal, corr);
@@ -130,12 +135,12 @@ end
 @inline function matched_filter(data::Data)
 
     # --Generate filter
-    filter_design = PolynomialRatio(reverse(data.signal));
+    filter_design = PolynomialRatio(reverse(data.signal), vec([1]));
     
     # --Filter data
     matched_output::Vector{Float64} = vec(filt(filter_design, data.noisy_signal)); 
-    matched_output = matched_output ./ maximum(matched_output);
-
+    @fastmath matched_output = reverse(matched_output ./ maximum(matched_output));
+    
     # --Store in a new struct
     corr = Corr(data.signal, data.noisy_signal, matched_output);
 

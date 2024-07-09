@@ -29,6 +29,8 @@ Manifest.toml
 *.mat
 *.fig
 *.gif
+*.png
+*.pdf
 
 Media/
 
