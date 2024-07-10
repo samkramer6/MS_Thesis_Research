@@ -9,7 +9,7 @@ using Timers
 
 ####################################################################################
 
-function main(algorithm::String)
+function main(algorithm::String, noise::String)
 
     # --Parameters
     Timers.tic()
@@ -32,7 +32,7 @@ function main(algorithm::String)
 
         for j in collect(range(1, num_sims)) 
             
-            detection_output::Detection = roll_dice(data, α[i], β[i], algorithm);
+            detection_output::Detection = roll_dice(data, α[i], β[i], algorithm, noise);
             
             @inbounds SNR_result[j] = detection_output.SNR;
             @inbounds detection_result[j] = detection_output.detection[1]; 
@@ -46,20 +46,34 @@ function main(algorithm::String)
 
     # --Plot
     plot!(SNRs, Probabilities,
-         ylims = (0, 1),
-         label = algorithm)
+         xlims = (-50, 5), 
+         ylims = (0, 1.05),
+         label = algorithm * " - " * noise,
+         guidefont = "Computer Modern",
+         xlabel = "SNR (dB)",
+         ylabel = "Detection Probability",
+         tickfont = "Computer Modern",
+         linewidth = 1.5,
+         legendfont = "Computer Modern",
+    )
 
     # --Out Statement
     num_total_sims = num_points * num_sims;
     println("====== SIM DONE ======")
     println("Algorithm Used: $algorithm") 
+    println("Noise Type Used = $noise") 
     println("sims per point = $num_sims")
-    println("Total Sims = $num_total_sims")
+    println("Total Sims = $num_total_sims \n")
     Timers.toc()
 
 end
 
+###################################################################################################
+
 plot()
-main("Cross-Correlation")
-main("Matched Filter")
-savefig("test_output.png")
+main("Cross-Correlation", "White")
+main("Matched Filter", "White")
+main("Cross-Correlation", "Colored")
+main("Matched Filter", "Colored")
+    savefig("test_output.png")
+

@@ -88,6 +88,33 @@ end
 
 end
 
+@inline function populate_noise_colored!(data::Data, α, β)
+
+    # --Create noise vector
+    noise::Vector{Float64} = α .* vec(rand(Normal(0, 0.33), 1, length(data.long_signal))) ./ β
+
+    # --Filter noise vector to make colored noise
+        a = vec(zeros(1, 255));
+        a[1] = 1;
+        i = collect(range(2, length(a)));
+        a[i] = (0.3 .+ i .- 1) .* (a[i .- 1] ./ i);
+        filter_design = DSP.PolynomialRatio(vec(a), vec([1]));
+
+    # --Color the noise
+        noise = DSP.filt(filter_design, noise);
+
+    # --Create noisy signal
+    noisy_signal::Vector{Float64} = data.long_signal .+ noise; 
+
+    # --Save to struct
+    data.noise = noise;
+    data.noisy_signal = noisy_signal;
+
+    # --find SNR
+    find_SNR!(data);
+
+end
+
 @inline function detect_signal(data::Data, known_location::Int64, algorithm::String)
     
     # --Find correlation
@@ -107,11 +134,15 @@ end
     return detection_output::Detection
 end
 
-@inline function roll_dice(data::Data, α, β, algorithm::String)
+@inline function roll_dice(data::Data, α, β, algorithm::String, noise::String)
 
     # --Populate Noise Function
-    populate_noise!(data, α, β);
-
+    if noise == "White"
+        populate_noise!(data, α, β);
+    elseif noise == "Colored"
+        populate_noise_colored!(data, α, β)
+    end
+    
     # --Detect location of signal
     detection_output::Detection = detect_signal(data, data.fs, algorithm);
 
