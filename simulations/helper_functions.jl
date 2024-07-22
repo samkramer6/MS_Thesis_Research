@@ -139,7 +139,7 @@ end
     # --Populate Noise Function
     if noise == "White"
         populate_noise!(data, α, β);
-    elseif noise == "Colored"
+    elseif noise == "Red"
         populate_noise_colored!(data, α, β)
     end
     

@@ -6,6 +6,7 @@ using BenchmarkTools
 using Plots
     gr()
 using Timers
+using PlotThemes
 
 ####################################################################################
 
@@ -55,6 +56,7 @@ function main(algorithm::String, noise::String)
          tickfont = "Computer Modern",
          linewidth = 1.5,
          legendfont = "Computer Modern",
+         theme = :bright,
     )
 
     # --Out Statement
@@ -73,7 +75,7 @@ end
 plot()
 main("Cross-Correlation", "White")
 main("Matched Filter", "White")
-main("Cross-Correlation", "Colored")
-main("Matched Filter", "Colored")
-    savefig("test_output.png")
+main("Cross-Correlation", "Red")
+main("Matched Filter", "Red")
+savefig("test_output.png")
 

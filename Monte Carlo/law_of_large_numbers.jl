@@ -8,6 +8,8 @@ statistical mean
     July 1st, 2024
 =#
 
+using Timers
+using LaTeXStrings
 using StatsPlots
 using Distributions
 using Plots
@@ -55,33 +57,22 @@ function main()
         vec(mean(solution2, dims = 1)),
         xaxis = :log,
         xlabel = "Number Iterations (N)",
-        ylabel = "Mean Absolute Value |μ|",
+        ylabel = L"Mean Absolute Value |\bar{X}|",
         title = "Behaviour of Random Values",
         label = false,
         ylim = (0, 1),
         guidefont = "Computer Modern",
         titlefont = "Computer Modern",
         tickfont = "Computer Modern",
+        dpi = 500,
     )
 
     savefig("result.png")
 
-    pop = populate(population(), 1000)
-    histogram(
-        pop.members,
-        bins = 40,
-        xlabel = "Value",
-        ylabel = "Occurance",
-        title = "Histogram of Population",
-        label = false,
-        guidefont = "Computer Modern",
-        titlefont = "Computer Modern",
-        tickfont = "Computer Modern",
-    )
-
-    savefig("Population Histogram.png")
-    
     return nothing
 end
 
+Timers.tic()
 main()
+Timers.toc()
+
