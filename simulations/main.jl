@@ -49,10 +49,10 @@ function main(algorithm::String, noise::String)
     plot!(SNRs, Probabilities,
          xlims = (-50, 5), 
          ylims = (0, 1.05),
-         label = algorithm * " - " * noise,
+         label = "Detection Probability Distribution",
          guidefont = "Computer Modern",
          xlabel = "SNR (dB)",
-         ylabel = "Detection Probability",
+         # ylabel = "Detection Probability",
          tickfont = "Computer Modern",
          linewidth = 1.5,
          legendfont = "Computer Modern",
@@ -77,5 +77,5 @@ main("Cross-Correlation", "White")
 main("Matched Filter", "White")
 main("Cross-Correlation", "Red")
 main("Matched Filter", "Red")
-savefig("test_output.png")
+savefig("Detection_Output.png")
 

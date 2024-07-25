@@ -149,6 +149,21 @@ end
     return detection_output::Detection 
 end
 
+@inline function find_pdf(SNRs::Vector{Float64}, Probabilities::Vector{Float64})
+
+    derivative = vec(zeros(1, length(SNRs) - 1));
+
+    for i in collect(range(1, length(SNRs)-1))
+        
+        num = Probabilities[i + 1] - Probabilities[i];
+        denom = SNRs[i + 1] - SNRs[i];
+        
+        derivative[i] = num ./ denom;
+    
+    end
+    
+    return derivative::Vector{<:Number}
+end
 ###################################################################################################
 
 @inline function xcorr(data::Data)
