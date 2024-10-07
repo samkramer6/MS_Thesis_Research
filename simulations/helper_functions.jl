@@ -41,7 +41,7 @@ end
 function populate_signal!(data::Data)
 
     T = 1
-    f = vec(collect(range(10, 128, data.fs))) .* 2 .* π
+    f = vec(collect(range(8, 128, data.fs))) .* 2 .* π
     time = vec(collect(range(0, T, data.fs)))
     hann_window = sin.(π .* time) .^ 2
     signal::Vector{Float64} = vec(hann_window .* sin.(f .* time))
@@ -172,10 +172,10 @@ end
 
     n = length(f1)
     m = length(f2)
+    term = sqrt((n + m) ./ (n * m))
+    # test_statistic = c_alpha .* term
 
-    test_statistic = c_alpha .* sqrt((n + m) ./ (n * m))
-
-    return D_nm > test_statistic
+    return D_nm / term
 end
 ###################################################################################################
 
